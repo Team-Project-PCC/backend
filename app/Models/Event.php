@@ -26,4 +26,8 @@ class Event extends Model
     public function schedules(){
         return $this->hasMany(Schedule::class);
     }
+
+    public function price(){
+        return $this->belongsTo(Price::class);
+    }
 }
