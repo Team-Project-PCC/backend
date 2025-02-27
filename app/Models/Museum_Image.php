@@ -13,4 +13,12 @@ class Museum_Image extends Model
         'description',
         'is_featured',
     ];
+
+    public function museum(){
+        return $this->belongsTo(Museum::class);
+    }
+
+    public function contact_info(){
+        return $this->belongsTo(Contact_Info::class);
+    }
 }

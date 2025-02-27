@@ -14,4 +14,8 @@ class Museum extends Model
         'phone',
         'website',
     ];
+
+    public function images(){
+        return $this->hasMany(Museum_Image::class);
+    }
 }

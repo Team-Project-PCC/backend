@@ -5,9 +5,8 @@ namespace App\Http\Controllers\Museum;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Museum;
-use Illuminate\Support\Facades\Validator;
 
-class MuseumController extends Controller
+class MuseumContact extends Controller
 {
     public function index(){
         try{
@@ -32,8 +31,6 @@ class MuseumController extends Controller
             }
             return response()->json([
                 'museum'=>$museum,
-                'cover_images'=>$museum->images->where('is_featured', 1),
-                'images'=>$museum->images,
                 'contact_info'=>$museum->contact_info,
             ],
                  200);
@@ -47,82 +44,66 @@ class MuseumController extends Controller
 
     public function store(Request $request){
         try{
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
-                'description' => 'required|string',
-                'location' => 'required|string',
-                'email' => 'nullable|string|email|max:255',
-                'phone' => 'nullable|string',
-                'website' => 'nullable|string',
-            ]);
-
-            if($validator->fails()){
-                return response()->json($validator->errors(), 422);
-            }
-
-            $museum = Museum::create([
-                'name' => $request->name,
-                'description' => $request->description,
-                'location' => $request->location,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'website' => $request->website,
-            ]);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Museum created',
-                'data' => $museum,
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to create museum',
-            ], 500);
-        }
-    }
-
-    public function update(Request $request, $name){
-        try{
-            $museum = Museum::where('name', $name)->first();
+            $museum = Museum::where('name', $request->name)->first();
             if(!$museum){
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Museum not found',
                 ], 404);
             }
-
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
-                'description' => 'required|string',
-                'location' => 'required|string',
-                'email' => 'nullable|string|email|max:255',
-                'phone' => 'nullable|string',
-                'website' => 'nullable|string',
-            ]);
-
-            if($validator->fails()){
-                return response()->json($validator->errors(), 422);
-            }
-
-            $museum = Museum::where('name', $name)->update([
-                'name' => $request->name,
-                'description' => $request->description,
-                'location' => $request->location,
+            $museum->contact_info()->create([
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'website' => $request->website,
+                'facebook' => $request->facebook,
+                'instagram' => $request->instagram,
+                'twitter' => $request->twitter,
+                'youtube' => $request->youtube,
+                'linkedin' => $request->linkedin,
+                'tiktok' => $request->tiktok,
+                'whatsapp' => $request->whatsapp,
             ]);
-
             return response()->json([
                 'status' => 'success',
-                'message' => 'Museum updated',
-                'data' => $museum,
+                'message' => 'Contact info added successfully',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to update museum',
+                'message' => 'Failed to add contact info',
+            ], 500);
+        }
+    }
+
+    public function update(Request $request){
+        try{
+            $museum = Museum::where('name', $request->name)->first();
+            if(!$museum){
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Museum not found',
+                ], 404);
+            }
+            $museum->contact_info()->update([
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'website' => $request->website,
+                'facebook' => $request->facebook,
+                'instagram' => $request->instagram,
+                'twitter' => $request->twitter,
+                'youtube' => $request->youtube,
+                'linkedin' => $request->linkedin,
+                'tiktok' => $request->tiktok,
+                'whatsapp' => $request->whatsapp,
+            ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Contact info updated successfully',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update contact info',
             ], 500);
         }
     }
@@ -136,17 +117,15 @@ class MuseumController extends Controller
                     'message' => 'Museum not found',
                 ], 404);
             }
-
-            $museum->delete();
-
+            $museum->contact_info()->delete();
             return response()->json([
                 'status' => 'success',
-                'message' => 'Museum deleted',
+                'message' => 'Contact info deleted successfully',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to delete museum',
+                'message' => 'Failed to delete contact info',
             ], 500);
         }
     }
