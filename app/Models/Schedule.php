@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Schedule extends Model
 {
     protected $fillable = [
-        'museum_id',
-        'day',
-        'open',
-        'close',
+        'event_id',
+        'date',
+        'time',
+        
     ];
 
     public function museum(){
