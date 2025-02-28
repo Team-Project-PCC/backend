@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('museum__images', function (Blueprint $table) {
+        Schema::create('events', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('museum_id')->constrained()->onDelete('cascade');
-            $table->string('image');
             $table->string('title');
-            $table->string('description');
-            $table->boolean('is_featured')->default(false);
+            $table->text('description');
+            $table->decimal('price', 10, 2);
+            $table->integer('capacity');
+            $table->string('image');
+            $table->enum('status', ['draft', 'published', 'closed']);
+            $table->enum('type',['recurring', 'special']);
             $table->timestamps();
         });
     }
@@ -27,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('museum__images');
+        Schema::dropIfExists('events');
     }
 };

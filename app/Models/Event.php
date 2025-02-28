@@ -7,27 +7,22 @@ use Illuminate\Database\Eloquent\Model;
 class Event extends Model
 {
     protected $fillable = [
-        'museum_id',
-        'name',
+        'title',
         'description',
-        'date',
         'price',
+        'capacity',
         'image',
+        'status',
+        'type',
     ];
 
-    public function museum(){
+    public function museum()
+    {
         return $this->belongsTo(Museum::class);
     }
 
-    public function images(){
-        return $this->hasMany(Event_Image::class);
-    }
-
-    public function schedules(){
-        return $this->hasMany(Schedule::class);
-    }
-
-    public function price(){
-        return $this->belongsTo(Price::class);
+    public function event_schedules()
+    {
+        return $this->hasMany(Event_Schedules_Recurring::class);
     }
 }

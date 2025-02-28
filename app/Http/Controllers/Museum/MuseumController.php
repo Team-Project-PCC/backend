@@ -5,76 +5,78 @@ namespace App\Http\Controllers\Museum;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Museum;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class MuseumController extends Controller
 {
-    public function index(){
+    public function index(Request $request){
         try{
             $museums = Museum::all();
-            return response()->json($museums, 200);
-        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'success',
+                'museums' => $museums,
+            ], 200);
+        } catch (\Exception $e){
+            Log::error('Museum error: ' . $e->getMessage());
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to get museums',
             ], 500);
+        } catch (\Exception $e){
+            Log::error('Museum error: ' . $e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Museum not found',
+            ], 404);
         }
     }
 
     public function show($name){
         try{
             $museum = Museum::where('name', $name)->first();
-            if(!$museum){
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Museum not found',
-                ], 404);
-            }
             return response()->json([
-                'museum'=>$museum,
-                'cover_images'=>$museum->images->where('is_featured', 1),
-                'images'=>$museum->images,
-                'contact_info'=>$museum->contact_info,
-            ],
-                 200);
-        } catch (\Exception $e) {
+                'status' => 'success',
+                'museum' => $museum,
+            ], 200);
+        } catch (\Exception $e){
+            Log::error('Museum error: ' . $e->getMessage());
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to get museum',
             ], 500);
+        } catch (\Exception $e){
+            Log::error('Museum error: ' . $e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Museum not found',
+            ], 404);
         }
     }
 
     public function store(Request $request){
         try{
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
-                'description' => 'required|string',
-                'location' => 'required|string',
-                'email' => 'nullable|string|email|max:255',
-                'phone' => 'nullable|string',
-                'website' => 'nullable|string',
-            ]);
-
-            if($validator->fails()){
-                return response()->json($validator->errors(), 422);
-            }
-
             $museum = Museum::create([
                 'name' => $request->name,
-                'description' => $request->description,
                 'location' => $request->location,
+                'description' => $request->description,
+                'photo' => $request->photo,
+                'contact' => $request->contact,
                 'email' => $request->email,
-                'phone' => $request->phone,
                 'website' => $request->website,
+                'open_time' => $request->open_time,
+                'close_time' => $request->close_time,
             ]);
-
             return response()->json([
                 'status' => 'success',
-                'message' => 'Museum created',
-                'data' => $museum,
-            ], 201);
-        } catch (\Exception $e) {
+                'museum' => $museum,
+            ], 200);
+        } catch (\Exception $e){
+            Log::error('Museum error: ' . $e->getMessage());
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to create museum',
@@ -82,44 +84,27 @@ class MuseumController extends Controller
         }
     }
 
-    public function update(Request $request, $name){
+    public function update(Request $request, $id){
         try{
-            $museum = Museum::where('name', $name)->first();
-            if(!$museum){
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Museum not found',
-                ], 404);
-            }
-
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
-                'description' => 'required|string',
-                'location' => 'required|string',
-                'email' => 'nullable|string|email|max:255',
-                'phone' => 'nullable|string',
-                'website' => 'nullable|string',
-            ]);
-
-            if($validator->fails()){
-                return response()->json($validator->errors(), 422);
-            }
-
-            $museum = Museum::where('name', $name)->update([
+            $museum = Museum::find($id);
+            $museum->update([
                 'name' => $request->name,
-                'description' => $request->description,
                 'location' => $request->location,
+                'description' => $request->description,
+                'photo' => $request->photo,
+                'contact' => $request->contact,
                 'email' => $request->email,
-                'phone' => $request->phone,
                 'website' => $request->website,
+                'open_time' => $request->open_time,
+                'close_time' => $request->close_time,
             ]);
-
             return response()->json([
                 'status' => 'success',
-                'message' => 'Museum updated',
-                'data' => $museum,
+                'museum' => $museum,
             ], 200);
-        } catch (\Exception $e) {
+        } catch (\Exception $e){
+            Log::error('Museum error: ' . $e->getMessage());
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to update museum',
@@ -127,23 +112,17 @@ class MuseumController extends Controller
         }
     }
 
-    public function destroy($name){
+    public function destroy($id){
         try{
-            $museum = Museum::where('name', $name)->first();
-            if(!$museum){
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Museum not found',
-                ], 404);
-            }
-
+            $museum = Museum::find($id);
             $museum->delete();
-
             return response()->json([
                 'status' => 'success',
                 'message' => 'Museum deleted',
             ], 200);
-        } catch (\Exception $e) {
+        } catch (\Exception $e){
+            Log::error('Museum error: ' . $e->getMessage());
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to delete museum',

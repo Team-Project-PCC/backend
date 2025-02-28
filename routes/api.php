@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\Museum\MuseumController;
 
 Route::post('/register', [RegisterController::class, 'register']);
 
@@ -30,3 +31,5 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/user', function (Request 
 });
 
 Route::post('/logout', [LogoutController::class, 'store'])->name('logout');
+
+Route::apiResource('museums', MuseumController::class);

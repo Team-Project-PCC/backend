@@ -10,12 +10,16 @@ class Museum extends Model
         'name',
         'location',
         'description',
+        'photo',
+        'contact',
         'email',
-        'phone',
         'website',
+        'open_time',
+        'close_time',
     ];
 
-    public function images(){
-        return $this->hasMany(Museum_Image::class);
+    public function events()
+    {
+        return $this->hasMany(Event::class);
     }
 }
