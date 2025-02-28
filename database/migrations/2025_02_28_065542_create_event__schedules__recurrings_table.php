@@ -14,9 +14,8 @@ return new class extends Migration
         Schema::create('event__schedules__recurrings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('event_id')->constrained()->onDelete('cascade');
+            $table->enum('recurring_type', ['daily', 'weekly', 'monthly']);
             $table->enum('day',['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']);
-            $table->time('start_time');
-            $table->time('end_time');
             $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
             $table->timestamps();

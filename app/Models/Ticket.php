@@ -4,14 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Event_Schedules_Recurring extends Model
+class Ticket extends Model
 {
-    protected $table = [
+    protected $fillable = [
         'event_id',
-        'recurring_type',
-        'day',
-        'start_time',
-        'end_time'
+        'category',
+        'price',
+        'quota',
     ];
 
     public function event(){

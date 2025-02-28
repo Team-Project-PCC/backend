@@ -4,13 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Event_Schedules_Recurring extends Model
+class Event_Schedules_Special extends Model
 {
     protected $table = [
         'event_id',
-        'recurring_type',
-        'day',
-        'start_time',
+        'start_date',
+        'end_date',
+        'start_ti,e',
         'end_time'
     ];
 
