@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('events', function (Blueprint $table) {
+        Schema::create('event__images', function (Blueprint $table) {
             $table->id();
-            $table->string('title');
-            $table->text('description');
-            $table->enum('status', ['draft', 'published', 'closed']);
-            $table->enum('type',['recurring', 'special']);
+            $table->foreignId('event_id')->constrained()->onUpdate('cascade');
+            $table->string('name');
+            $table->string('url');
             $table->timestamps();
         });
     }
@@ -26,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('events');
+        Schema::dropIfExists('event__images');
     }
 };

@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Event_Schedules_Recurring extends Model
 {
-    protected $table = [
+    protected $table = 'event_schedules_recurrings';
+    protected $fillable = [
         'event_id',
         'recurring_type',
         'day',

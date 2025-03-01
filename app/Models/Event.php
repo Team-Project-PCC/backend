@@ -23,4 +23,14 @@ class Event extends Model
     {
         return $this->hasMany(Event_Schedules_Special::class);
     }
+
+    public function ticket_categories()
+    {
+        return $this->hasMany(Ticket_Categories::class);
+    }
+
+    public function event_images()
+    {
+        return $this->hasMany(Event_Image::class);
+    }
 }

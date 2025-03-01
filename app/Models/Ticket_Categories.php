@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Ticket_Categories extends Model
 {
+    protected $table ='ticket_categories';
     protected $fillable = [
         'event_id',
         'category',
