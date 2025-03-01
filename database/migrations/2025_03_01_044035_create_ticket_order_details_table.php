@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ticket__order__details', function (Blueprint $table) {
+        Schema::create('ticket_order_details', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('ticket_id')->constrained()->onDelete('cascade');
             $table->foreignId('ticket_order_id')->constrained()->onDelete('cascade');
             $table->foreignId('ticket_category_id')->constrained()->onDelete('cascade');
             $table->integer('quantity');
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ticket__order__details');
+        Schema::dropIfExists('ticket_order_details');
     }
 };

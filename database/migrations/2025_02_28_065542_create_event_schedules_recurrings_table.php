@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('event__schedules__specials', function (Blueprint $table) {
+        Schema::create('event_schedules_recurrings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('event_id')->constrained()->onDelete('cascade');
-            $table->dateTime('start_date');
-            $table->dateTime('end_date');
+            $table->enum('recurring_type', ['daily', 'weekly', 'monthly']);
+            $table->enum('day',['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']);
             $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
             $table->timestamps();
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('event__schedules__specials');
+        Schema::dropIfExists('event_schedules_recurrings');
     }
 };

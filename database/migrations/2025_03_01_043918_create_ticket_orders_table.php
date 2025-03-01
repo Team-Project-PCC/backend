@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ticket__categories', function (Blueprint $table) {
+        Schema::create('ticket_orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('event_id')->constrained()->onDelete('cascade');
-            $table->enum('category', ['child', 'Regular', 'student', 'vip']);
-            $table->decimal('price', 10, 2);
-            $table->integer('quota');
+            $table->foreignId('ticket_id')->constrained()->onDelete('cascade');
+            $table->integer('quantity');
+            $table->decimal('total_price', 10, 2);
+            $table->foreignId('promotion_id')->nullable()->constrained('promotions')->onDelete('set null');
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ticket__categories');
+        Schema::dropIfExists('ticket_orders');
     }
 };
