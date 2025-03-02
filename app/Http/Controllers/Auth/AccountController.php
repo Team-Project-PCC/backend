@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Http;
+use App\Models\Event_Image;
 
 class AccountController extends Controller
 {
@@ -17,7 +19,7 @@ class AccountController extends Controller
                 'name'=>'nullable|string',
                 'email'=>'nullable|email',
                 'password'=>'nullable|string|min:8',
-                'url_avatar'=>'nullable|url',
+                'image'=>'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
             if($validator->fails()){
@@ -32,6 +34,24 @@ class AccountController extends Controller
                     'message' => 'User not found'
                 ], 404);
             }
+
+            if ($request->hasFile('image')) {
+                $file = $request->file('image');
+                $image = file_get_contents($file->getRealPath());
+                $encodedImage = base64_encode($image);
+
+                $response = Http::asForm()->post('https://api.imgbb.com/1/upload', [
+                    'key' => env('IMGBB_API_KEY'),
+                    'image' => $encodedImage
+                ]);
+
+                $result = $response->json();
+                
+                if (isset($result['data']['url'])) {
+                    $dataToUpdate['avatar_url'] = $result['data']['url'];
+                }
+            }
+
 
             $dataToUpdate = collect($request->only(['name', 'email', 'password', 'url_avatar']))->filter(function($value){
                 return $value !== null;

@@ -7,6 +7,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Event\EventController;
+use App\Http\Controllers\Auth\AccountController;
+use App\Http\Controllers\Event\PromotionController;
 
 Route::post('/register', [RegisterController::class, 'register']);
 
@@ -15,7 +17,6 @@ Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 've
     ->name('verification.verify');
 
 Route::post('/email/resend', [EmailVerificationController::class, 'resend'])
-    // ->middleware(['auth'])
     ->name('verification.resend');
 
 Route::post('/login', [LoginController::class, 'store'])->name('login');
@@ -31,4 +32,8 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/user', function (Request 
 
 Route::post('/logout', [LogoutController::class, 'store'])->name('logout');
 
+Route::put('update_profile', [AccountController::class, 'update_profile'])->middleware('auth:sanctum');
+
 Route::apiResource('events', EventController::class)->middleware('role:admin')->except('index', 'show');
+
+Route::apiResource('promo', PromotionController::class)->middleware('role:admin')->except('index', 'show');
