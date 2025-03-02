@@ -8,31 +8,36 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
-use App\Models\Event_Image;
 
 class AccountController extends Controller
 {
     public function update_profile(Request $request)
     {
-        try{
+        try {
             $validator = Validator::make($request->all(), [
-                'name'=>'nullable|string',
-                'email'=>'nullable|email',
-                'password'=>'nullable|string|min:8',
-                'image'=>'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
+                'name' => 'nullable|string',
+                'email' => 'nullable|email|unique:users,email,' . Auth::id(),
+                'password' => 'nullable|string|min:8',
+                'image' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
-            if($validator->fails()){
+            if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
             }
 
-            $user = User::find(Auth::user()->id);
+            $user = User::find(Auth::id());
 
-            if(!$user){
+            if (!$user) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'User not found'
                 ], 404);
+            }
+
+            $dataToUpdate = collect($request->only(['name', 'email', 'password']))->filter()->toArray();
+
+            if (array_key_exists('password', $dataToUpdate)) {
+                $dataToUpdate['password'] = bcrypt($dataToUpdate['password']);
             }
 
             if ($request->hasFile('image')) {
@@ -46,19 +51,10 @@ class AccountController extends Controller
                 ]);
 
                 $result = $response->json();
-                
+
                 if (isset($result['data']['url'])) {
-                    $dataToUpdate['avatar_url'] = $result['data']['url'];
+                    $dataToUpdate['url_avatar'] = $result['data']['url'];
                 }
-            }
-
-
-            $dataToUpdate = collect($request->only(['name', 'email', 'password', 'url_avatar']))->filter(function($value){
-                return $value !== null;
-            })->toArray();
-
-            if(array_key_exists('password', $dataToUpdate)){
-                $dataToUpdate['password'] = bcrypt($dataToUpdate['password']);
             }
 
             $user->update($dataToUpdate);
@@ -68,11 +64,11 @@ class AccountController extends Controller
                 'message' => 'Profile updated',
                 'data' => $user
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to update profile'
+                'message' => 'Failed to update profile',
+                'error' => $e->getMessage()
             ], 500);
         }
     }

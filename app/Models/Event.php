@@ -34,8 +34,9 @@ class Event extends Model
         return $this->hasMany(Event_Image::class);
     }
 
-    public function event_promotions()
+    public function promotions()
     {
-        return $this->hasMany(Event_Promotions::class);
+        return $this->belongsToMany(Promotions::class, 'event_promotions', 'event_id', 'promotion_id');
     }
+
 }

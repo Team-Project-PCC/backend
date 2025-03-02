@@ -32,8 +32,12 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/user', function (Request 
 
 Route::post('/logout', [LogoutController::class, 'store'])->name('logout');
 
-Route::put('update_profile', [AccountController::class, 'update_profile'])->middleware('auth:sanctum');
+Route::post('update_profile', [AccountController::class, 'update_profile']);
 
 Route::apiResource('events', EventController::class)->middleware('role:admin')->except('index', 'show');
+Route::get('events', [EventController::class, 'index']);
+Route::get('events/{id}', [EventController::class, 'show']);
 
 Route::apiResource('promo', PromotionController::class)->middleware('role:admin')->except('index', 'show');
+Route::get('promo', [PromotionController::class, 'index']);
+Route::get('promo/{id}', [PromotionController::class, 'show']);

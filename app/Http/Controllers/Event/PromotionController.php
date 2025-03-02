@@ -20,7 +20,8 @@ class PromotionController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to get promotions'
+                'message' => 'Failed to get promotions',
+                'error' => $e
             ], 500);
         }
     }
@@ -48,60 +49,59 @@ class PromotionController extends Controller
     }
 
     public function store(Request $request)
-    {
-        try {
-            $validator = Validator::make($request->all(), [
-                'code'=>'required|string|unique:promotions',
-                'type'=>'required|in:percentage, nominal',
-                'value'=>'required|numeric',
-                'max_discount'=>'required|numeric',
-                'min_order'=>'required|numeric',
-                'valid_from'=>'required|date',
-                'valid_until'=>'required|date',
-                'usage_limit'=>'required|numeric',
-                'usage_count'=>'required|numeric',
-                'event_id'=>'nullable|exists:events,id'
-            ]);
+{
+    try {
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|string|unique:promotions',
+            'type' => 'required|in:percentage,fixed', 
+            'value' => 'required|numeric',
+            'max_discount' => 'nullable|numeric',
+            'min_order' => 'nullable|numeric',
+            'valid_from' => 'required|date_format:Y-m-d H:i:s|after:now',
+            'valid_until' => 'required|date_format:Y-m-d H:i:s|after:valid_from',
+            'usage_limit' => 'required|integer',
+            'usage_count' => 'nullable|integer',
+            'event_id' => 'nullable|exists:events,id'
+        ]);
 
-            if ($validator->fails()) {
-                return response()->json($validator->errors(), 422);
-            }
-
-            $promotion = Promotions::create([
-                'code' => $request->code,
-                'type' => $request->type,
-                'value' => $request->value,
-                'max_discount' => $request->max_discount,
-                'min_order' => $request->min_order,
-                'valid_from' => $request->valid_from,
-                'valid_until' => $request->valid_until,
-                'usage_limit' => $request->usage_limit,
-                'usage_count' => $request->usage_count,
-                'is_active' => true
-            ]);
-
-            if($request->event_id){
-                $promotion->event()->attach($request->event_id);
-
-                $event_promotion = $promotion->event_promotions()->where(
-                    ['event_id' => $request->event_id,
-                    'promotion_id' => $promotion->id])->first();
-            }
-
-            $promotion->event_promotions()->save($event_promotion);
-
-            return response()->json([
-                'status' => 'success',
-                'data' => $promotion
-            ], 201);
-
-        } catch (\Exception $e) {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to create promotion'
-            ], 500);
+                'message' => $validator->errors()
+            ], 422);
         }
+
+        $promotion = Promotions::create([
+            'code' => $request->code,
+            'type' => $request->type,
+            'value' => $request->value,
+            'max_discount' => $request->max_discount,
+            'min_order' => $request->min_order,
+            'valid_from' => $request->valid_from,
+            'valid_until' => $request->valid_until,
+            'usage_limit' => $request->usage_limit,
+            'usage_count' => $request->usage_count ?? 0, 
+        ]);
+
+        if ($request->event_id) {
+            $promotion->events()->attach($request->event_id,  ['created_at' => now(), 'updated_at' => now()]);
+        }
+
+        $promotion= Promotions::with('event_promotions.event')->find($promotion->id);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $promotion
+        ], 201);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to create promotion',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     public function update(Request $request)
     {
