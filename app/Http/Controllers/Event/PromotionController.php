@@ -132,7 +132,6 @@ class PromotionController extends Controller
                 ], 404);
             }
 
-            // Ambil hanya input yang diisi (tidak null)
             $dataToUpdate = collect($request->only([
                 'code', 'type', 'value', 'max_discount', 'min_order',
                 'valid_from', 'valid_until', 'usage_limit', 'usage_count'
@@ -142,7 +141,6 @@ class PromotionController extends Controller
                 $promotion->update($dataToUpdate);
             }
 
-            // Sinkronisasi event hanya jika event_id dikirim
             if ($request->has('event_id')) {
                 $promotion->events()->sync($request->event_id);
             }
