@@ -18,6 +18,6 @@ class Event_Promotions extends Model
     }
 
     public function promotion(){
-        return $this->belongsTo(Promotions::class);
+        return $this->belongsTo(Promotion::class);
     }
 }

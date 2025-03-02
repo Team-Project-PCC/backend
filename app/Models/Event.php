@@ -26,7 +26,7 @@ class Event extends Model
 
     public function ticket_categories()
     {
-        return $this->hasMany(Ticket_Categories::class);
+        return $this->hasMany(TicketCategory::class);
     }
 
     public function event_images()
@@ -36,7 +36,7 @@ class Event extends Model
 
     public function promotions()
     {
-        return $this->belongsToMany(Promotions::class, 'event_promotions', 'event_id', 'promotion_id');
+        return $this->belongsToMany(Promotion::class, 'event_promotions', 'event_id', 'promotion_id');
     }
 
 }

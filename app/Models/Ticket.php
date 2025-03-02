@@ -11,9 +11,19 @@ class Ticket extends Model
         'category',
         'price',
         'quota',
+        'user_id',
     ];
 
     public function event(){
         return $this->belongsTo(Event::class);
+    }
+
+    public function User(){
+        return $this->belongsTo(User::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(TicketCategory::class, 'ticket_category_id');
     }
 }

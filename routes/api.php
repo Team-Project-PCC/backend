@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Order\TicketController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
@@ -41,3 +42,7 @@ Route::get('events/{id}', [EventController::class, 'show']);
 Route::apiResource('promo', PromotionController::class)->middleware('role:admin')->except('index', 'show');
 Route::get('promo', [PromotionController::class, 'index']);
 Route::get('promo/{id}', [PromotionController::class, 'show']);
+
+// Route::apiResource('/order', TicketController::class)->middleware('auth:sanctum');
+
+Route::post('/order', [TicketController::class, 'store']);

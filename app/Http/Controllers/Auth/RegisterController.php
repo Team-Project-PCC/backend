@@ -22,7 +22,6 @@ class RegisterController extends Controller
                 return response()->json($validator->errors(), 422);
             }
 
-            // Buat user baru
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -31,7 +30,6 @@ class RegisterController extends Controller
 
             $user->assignRole('user');
 
-            // Kirim email verifikasi
             $user->sendEmailVerificationNotification();
 
             return response()->json([

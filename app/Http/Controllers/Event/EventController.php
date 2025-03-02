@@ -8,7 +8,7 @@ use App\Models\Event;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Event_Schedules_Recurring;
 use App\Models\Event_Schedules_Special;
-use App\Models\Ticket_Categories;
+use App\Models\TicketCategory;
 use Illuminate\Support\Facades\Http;
 use App\Models\Event_Image;
 
@@ -159,7 +159,7 @@ class EventController extends Controller
         }
 
         foreach ($categories as $category) {
-            Ticket_Categories::create([
+            TicketCategory::create([
                 'event_id' => $event->id,
                 'category' => $category['category'] ?? null,
                 'price' => $category['price'] ?? 0,
@@ -242,10 +242,10 @@ class EventController extends Controller
                 }
             }
     
-            Ticket_Categories::where('event_id', $event->id)->delete();
+            TicketCategory::where('event_id', $event->id)->delete();
     
             foreach ($request->category as $category) {
-                Ticket_Categories::create([
+                TicketCategory::create([
                     'event_id' => $event->id,
                     'category' => $category['category'],
                     'price' => $category['price'],

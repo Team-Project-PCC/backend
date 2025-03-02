@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Event;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Promotions;
+use App\Models\Promotion;
 use Illuminate\Support\Facades\Validator;
 
 class PromotionController extends Controller
@@ -12,7 +12,7 @@ class PromotionController extends Controller
     public function index()
     {
         try{
-            $promotions = Promotions::with('event_promotions.event')->get();
+            $promotions = Promotion::with('event_promotions.event')->get();
             return response()->json([
                 'status' => 'success',
                 'data' => $promotions
@@ -29,7 +29,7 @@ class PromotionController extends Controller
     public function show($id)
     {
         try{
-            $promotion = Promotions::with('event_promotions.event')->find($id);
+            $promotion = Promotion::with('event_promotions.event')->find($id);
             if(!$promotion){
                 return response()->json([
                     'status' => 'error',
@@ -71,7 +71,7 @@ class PromotionController extends Controller
             ], 422);
         }
 
-        $promotion = Promotions::create([
+        $promotion = Promotion::create([
             'code' => $request->code,
             'type' => $request->type,
             'value' => $request->value,
@@ -87,7 +87,7 @@ class PromotionController extends Controller
             $promotion->events()->attach($request->event_id,  ['created_at' => now(), 'updated_at' => now()]);
         }
 
-        $promotion= Promotions::with('event_promotions.event')->find($promotion->id);
+        $promotion= Promotion::with('event_promotions.event')->find($promotion->id);
 
         return response()->json([
             'status' => 'success',
@@ -124,7 +124,7 @@ class PromotionController extends Controller
                 return response()->json($validator->errors(), 422);
             }
 
-            $promotion = Promotions::find($request->id);
+            $promotion = Promotion::find($request->id);
             if (!$promotion) {
                 return response()->json([
                     'status' => 'error',
@@ -162,7 +162,7 @@ class PromotionController extends Controller
     public function destroy($id)
     {
         try {
-            $promotion = Promotions::with('event_promotions')->find($id);
+            $promotion = Promotion::with('event_promotions')->find($id);
             if (!$promotion) {
                 return response()->json([
                     'status' => 'error',
