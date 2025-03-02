@@ -39,4 +39,14 @@ class Promotions extends Model
                now()->between($this->valid_from, $this->valid_until) &&
                ($this->usage_limit === null || $this->usage_count < $this->usage_limit);
     }
+
+    public function event()
+    {
+        return $this->belongsToMany(Event::class, 'event_promotions');
+    }
+
+    public function event_promotions()
+    {
+        return $this->hasMany(Event_Promotions::class);
+    }
 }

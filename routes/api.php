@@ -3,7 +3,6 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LogoutController;
@@ -32,4 +31,4 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/user', function (Request 
 
 Route::post('/logout', [LogoutController::class, 'store'])->name('logout');
 
-Route::apiResource('events', EventController::class)->middleware('role:admin');
+Route::apiResource('events', EventController::class)->middleware('role:admin')->except('index', 'show');
