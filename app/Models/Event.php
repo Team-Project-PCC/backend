@@ -16,12 +16,12 @@ class Event extends Model
 
     public function event_schedules_recurring()
     {
-        return $this->hasMany(Event_Schedules_Recurring::class);
+        return $this->hasMany(EventSchedulesRecurring::class);
     }
 
     public function event_schedules_special()
     {
-        return $this->hasMany(Event_Schedules_Special::class);
+        return $this->hasMany(EventSchedulesSpecial::class);
     }
 
     public function ticket_categories()
@@ -31,7 +31,7 @@ class Event extends Model
 
     public function event_images()
     {
-        return $this->hasMany(Event_Image::class);
+        return $this->hasMany(EventImage::class);
     }
 
     public function promotions()

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('ticket_orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('ticket_id')->constrained()->onDelete('cascade');
-            $table->integer('quantity');
+            $table->integer('total_quantity');
             $table->decimal('total_price', 10, 2);
             $table->foreignId('promotion_id')->nullable()->constrained('promotions')->onDelete('set null');
             $table->timestamps();
