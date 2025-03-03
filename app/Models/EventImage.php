@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Event_Image extends Model
+class EventImage extends Model
 {
     protected $table = 'event_images';
     protected $fillable = [

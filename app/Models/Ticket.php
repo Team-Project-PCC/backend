@@ -26,4 +26,9 @@ class Ticket extends Model
     {
         return $this->belongsTo(TicketCategory::class, 'ticket_category_id');
     }
+
+    public function orders()
+    {
+        return $this->hasMany(TicketOrderDetails::class, 'ticket_id');
+    }
 }
