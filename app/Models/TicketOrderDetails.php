@@ -14,4 +14,14 @@ class TicketOrderDetails extends Model
         'price',
         'subtotal',
     ];
+
+    public function ticketOrder()
+    {
+        return $this->belongsTo(TicketOrder::class);
+    }
+
+    public function ticketCategory()
+    {
+        return $this->belongsTo(TicketCategory::class);
+    }
 }

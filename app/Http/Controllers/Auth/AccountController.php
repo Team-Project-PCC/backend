@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Http;
 
 class AccountController extends Controller
 {
@@ -42,19 +42,9 @@ class AccountController extends Controller
 
             if ($request->hasFile('image')) {
                 $file = $request->file('image');
-                $image = file_get_contents($file->getRealPath());
-                $encodedImage = base64_encode($image);
-
-                $response = Http::asForm()->post('https://api.imgbb.com/1/upload', [
-                    'key' => env('IMGBB_API_KEY'),
-                    'image' => $encodedImage
-                ]);
-
-                $result = $response->json();
-
-                if (isset($result['data']['url'])) {
-                    $dataToUpdate['url_avatar'] = $result['data']['url'];
-                }
+                $filename = 'avatar_' . Auth::id() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('avatars', $filename, 'public'); 
+                $dataToUpdate['url_avatar'] = Storage::url($path);
             }
 
             $user->update($dataToUpdate);

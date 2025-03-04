@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('ticket_categories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('event_id')->constrained()->onDelete('cascade');
-            $table->enum('category', ['child', 'Regular', 'student', 'vip']);
+            $table->enum('category', ['child', 'regular', 'student', 'vip']);
             $table->decimal('price', 10, 2);
             $table->integer('quota');
             $table->timestamps();

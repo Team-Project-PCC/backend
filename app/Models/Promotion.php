@@ -51,8 +51,13 @@ class Promotion extends Model
     }
 
     public function events()
-{
-    return $this->belongsToMany(Event::class, 'event_promotions', 'promotion_id', 'event_id');
-}
+    {
+        return $this->belongsToMany(Event::class, 'event_promotions', 'promotion_id', 'event_id');
+    }
+
+    public function ticket_orders()
+    {
+        return $this->hasMany(TicketOrder::class);
+    }
 
 }

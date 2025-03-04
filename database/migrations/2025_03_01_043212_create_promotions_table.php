@@ -17,6 +17,7 @@ return new class extends Migration
             $table->enum('type', ['percentage', 'fixed']);
             $table->decimal('value', 10, 2);
             $table->decimal('max_discount', 10, 2)->nullable();
+            $table->decimal('min_discount', 10, 2)->nullable();
             $table->integer('min_order')->nullable();
             $table->dateTime('valid_from');
             $table->dateTime('valid_until');

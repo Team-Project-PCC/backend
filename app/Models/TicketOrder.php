@@ -23,4 +23,9 @@ class TicketOrder extends Model
     {
         return $this->belongsTo(Promotion::class);
     }
+
+    public function ticketOrderDetails()
+    {
+        return $this->hasMany(TicketOrderDetails::class);
+    }
 }

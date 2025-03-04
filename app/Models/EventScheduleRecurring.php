@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class EventSchedulesRecurring extends Model
+class EventScheduleRecurring extends Model
 {
     protected $table = 'event_schedules_recurrings';
     protected $fillable = [
@@ -17,5 +17,9 @@ class EventSchedulesRecurring extends Model
 
     public function event(){
         return $this->belongsTo(Event::class);
+    }
+
+    public function scheduleDays(){
+        return $this->hasMany(EventScheduleDays::class);
     }
 }

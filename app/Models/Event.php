@@ -16,12 +16,12 @@ class Event extends Model
 
     public function event_schedules_recurring()
     {
-        return $this->hasMany(EventSchedulesRecurring::class);
+        return $this->hasMany(EventScheduleRecurring::class);
     }
 
     public function event_schedules_special()
     {
-        return $this->hasMany(EventSchedulesSpecial::class);
+        return $this->hasMany(EventScheduleSpecial::class);
     }
 
     public function ticket_categories()

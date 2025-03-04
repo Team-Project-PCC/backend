@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class EventSchedulesSpecial extends Model
+class EventScheduleSpecial extends Model
 {
     protected $table = 'event_schedules_specials';
 
@@ -12,7 +12,7 @@ class EventSchedulesSpecial extends Model
         'event_id',
         'start_date',
         'end_date',
-        'start_ti,e',
+        'start_time',
         'end_time'
     ];
 

@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('event_images', function (Blueprint $table) {
+        Schema::create('event_schedule_days', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('event_id')->constrained()->onDelete('cascade');
-            $table->string('name');
-            $table->string('url');
+            $table->foreignId('event_schedule_recurring_id')->constrained('event_schedules_recurrings')->onDelete('cascade');
+            $table->enum('day', ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']);
             $table->timestamps();
         });
     }
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('event_images');
+        Schema::dropIfExists('event_schedule_days');
     }
 };

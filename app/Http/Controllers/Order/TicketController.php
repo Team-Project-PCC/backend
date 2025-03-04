@@ -143,11 +143,14 @@ class TicketController extends Controller
                 'event_id' => 'required|integer',
                 'ticket_category_id' => 'required|integer',
                 'quantity' => 'required|integer|min:1',
-                'code_promotion' => 'nullable|integer',
+                'code_promotion' => 'nullable|string',
             ]);
 
             $user = User::findOrFail($request->user()->id);
             $ticketCategory = TicketCategory::findOrFail($request->ticket_category_id);
+            $totalPrice = $request->quantity * $ticketCategory->price;
+            $promotion = null;
+            $discount = 0;
 
             $ticket = Ticket::create([
                 'event_id' => $request->event_id,
@@ -156,28 +159,56 @@ class TicketController extends Controller
             ]);
 
             if ($request->code_promotion) {
-                $promotion = Promotion::where('id', $request->code_promotion)->first();
-                $eventPromotion = DB::table('event_promotions')
-                    ->where('event_id', $request->event_id)
-                    ->where('promotion_id', $request->code_promotion)
-                    ->first();
+                $promotion = Promotion::where('code', $request->code_promotion)->first();
 
-                if (!$eventPromotion) {
-                    DB::rollBack();
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Promotion is not valid for this event',
-                    ], 400);
+                if ($promotion) {
+                    $eventPromotion = DB::table('event_promotions')
+                        ->where('event_id', $request->event_id)
+                        ->where('promotion_id', $promotion->id) // Gunakan ID, bukan kode
+                        ->first();
+
+                    if (!$eventPromotion) {
+                        DB::rollBack();
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'Promotion is not valid for this event',
+                        ], 400);
+                    }
+
+                    // Validasi tanggal promosi
+                    if (now()->lt($promotion->valid_from) || now()->gt($promotion->valid_until)) {
+                        DB::rollBack();
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'Promotion is expired or not yet active',
+                        ], 400);
+                    }
+
+                    // Hitung diskon
+                    if ($promotion->type == 'percentage') {
+                        $discount = ($totalPrice * $promotion->value) / 100;
+                        
+                        if ($promotion->max_discount && $discount > $promotion->max_discount) {
+                            $discount = $promotion->max_discount;
+                        }
+                        
+                        if ($promotion->min_discount && $discount < $promotion->min_discount) {
+                            $discount = $promotion->min_discount;
+                        }
+
+                    } else {
+                        $discount = $promotion->value;
+                    }
+
+                    $totalPrice = max(0, $totalPrice - $discount);
                 }
             }
-
-            $totalPrice = $request->quantity * $ticketCategory->price;
 
             $ticketOrder = TicketOrder::create([
                 'ticket_id' => $ticket->id,
                 'total_quantity' => $request->quantity,
                 'total_price' => $totalPrice,
-                'promotion_id' => $request->code_promotion,
+                'promotion_id' => $promotion ? $promotion->id : null, // Simpan ID, bukan kode
             ]);
 
             TicketOrderDetails::create([
@@ -216,4 +247,5 @@ class TicketController extends Controller
             ], 500);
         }
     }
+
 }
