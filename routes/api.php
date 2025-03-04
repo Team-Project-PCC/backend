@@ -45,4 +45,4 @@ Route::get('promo/{id}', [PromotionController::class, 'show']);
 
 // Route::apiResource('/order', TicketController::class)->middleware('auth:sanctum');
 
-Route::post('/order', [TicketController::class, 'store']);
+Route::post('/tickets', [TicketController::class, 'store']);

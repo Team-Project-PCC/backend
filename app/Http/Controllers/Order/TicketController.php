@@ -11,24 +11,144 @@ use App\Models\Promotion;
 use App\Models\User;
 use App\Models\TicketOrderDetails;
 use App\Models\TicketCategory;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
+use Exception;
 
 class TicketController extends Controller
 {
+    public function index()
+    {
+        try {
+            $ticketOrders = TicketOrder::with('ticket', 'ticket.category', 'promotion')->get();
+            return response()->json([
+                'status' => 'success',
+                'data' => $ticketOrders
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch ticket orders',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $ticketOrder = TicketOrder::with('ticket', 'ticket.category', 'promotion')->findOrFail($id);
+            return response()->json([
+                'status' => 'success',
+                'data' => $ticketOrder
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Ticket order not found'
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch ticket order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $validated = $request->validate([
+                'quantity' => 'required|integer|min:1',
+            ]);
+
+            $ticketOrder = TicketOrder::findOrFail($id);
+            $ticketCategory = TicketCategory::findOrFail($ticketOrder->ticket->ticket_category_id);
+            
+            $totalPrice = $request->quantity * $ticketCategory->price;
+
+            $ticketOrder->update([
+                'total_quantity' => $request->quantity,
+                'total_price' => $totalPrice,
+            ]);
+
+            $ticketOrder->details()->update([
+                'quantity' => $request->quantity,
+                'subtotal' => $totalPrice,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Ticket order updated successfully',
+                'data' => $ticketOrder
+            ], 200);
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Resource not found'
+            ], 404);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update ticket order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $ticketOrder = TicketOrder::findOrFail($id);
+            $ticketOrder->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Ticket order deleted successfully'
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Ticket order not found'
+            ], 404);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to delete ticket order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try {
-            DB::beginTransaction(); // Memulai transaksi
+            DB::beginTransaction();
 
             $validated = $request->validate([
                 'event_id' => 'required|integer',
                 'ticket_category_id' => 'required|integer',
-                'quantity' => 'required|integer',
+                'quantity' => 'required|integer|min:1',
                 'code_promotion' => 'nullable|integer',
             ]);
 
             $user = User::findOrFail($request->user()->id);
             $ticketCategory = TicketCategory::findOrFail($request->ticket_category_id);
-            
+
             $ticket = Ticket::create([
                 'event_id' => $request->event_id,
                 'ticket_category_id' => $request->ticket_category_id,
@@ -43,7 +163,7 @@ class TicketController extends Controller
                     ->first();
 
                 if (!$eventPromotion) {
-                    DB::rollBack(); // Batalkan transaksi jika promosi tidak valid
+                    DB::rollBack();
                     return response()->json([
                         'status' => 'error',
                         'message' => 'Promotion is not valid for this event',
@@ -60,23 +180,35 @@ class TicketController extends Controller
                 'promotion_id' => $request->code_promotion,
             ]);
 
-            $ticketOrderDetails = TicketOrderDetails::create([
+            TicketOrderDetails::create([
                 'ticket_order_id' => $ticketOrder->id,
                 'quantity' => $request->quantity,
                 'price' => $ticketCategory->price,
                 'subtotal' => $totalPrice,
             ]);
 
-            DB::commit(); // Simpan transaksi ke database
+            DB::commit();
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Ticket ordered successfully',
                 'data' => $ticketOrder
             ], 201);
-
-        } catch (\Exception $e) {
-            DB::rollBack(); // Batalkan transaksi jika terjadi kesalahan
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Resource not found'
+            ], 404);
+        } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to order ticket',
@@ -84,5 +216,4 @@ class TicketController extends Controller
             ], 500);
         }
     }
-
 }

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 class RegisterController extends Controller
 {
@@ -19,27 +20,42 @@ class RegisterController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json($validator->errors(), 422);
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
             }
 
+            // Membuat user
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
             ]);
 
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal membuat akun, coba lagi.'
+                ], 500);
+            }
+
+            // Menetapkan peran
             $user->assignRole('user');
 
-            $user->sendEmailVerificationNotification();
+            // Mengirim email verifikasi menggunakan queue
+            $user->sendEmailVerificationNotification(); // Pastikan sudah menggunakan queue di Mailer
 
             return response()->json([
                 'success' => true,
-                'message' => 'Registration successful. Please verify your email.',
+                'message' => 'Registrasi berhasil. Silakan periksa email untuk verifikasi.',
             ], 201);
         } catch (\Exception $e) {
+            Log::error('Register Error: ' . $e->getMessage());
+
             return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to create user'
+                'success' => false,
+                'message' => 'Terjadi kesalahan, silakan coba lagi nanti.'
             ], 500);
         }
     }

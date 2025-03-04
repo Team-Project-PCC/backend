@@ -9,7 +9,7 @@ class TicketOrder extends Model
     protected $table = 'ticket_orders';
     protected $fillable = [
         'ticket_id',
-        'quantity',
+        'total_quantity',
         'promotions_id',
         'total_price',
     ];
