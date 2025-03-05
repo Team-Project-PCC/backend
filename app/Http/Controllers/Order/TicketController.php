@@ -146,6 +146,7 @@ class TicketController extends Controller
                 'code_promotion' => 'nullable|string',
             ]);
 
+
             $user = User::findOrFail($request->user()->id);
             $ticketCategory = TicketCategory::findOrFail($request->ticket_category_id);
             $totalPrice = $request->quantity * $ticketCategory->price;

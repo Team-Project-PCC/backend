@@ -64,8 +64,14 @@ class Promotion extends Model
         return $this->hasMany(PromotionRules::class);
     }
 
-    public function promotion_rule()
+    public function promotion_type()
     {
-        return $this->hasOne(PromotionRules::class);
+        return $this->belongsTo(PromotionTypes::class, 'type_id');
     }
+
+    public function promotion_usages()
+    {
+        return $this->hasMany(PromotionUsages::class);
+    }
+
 }
