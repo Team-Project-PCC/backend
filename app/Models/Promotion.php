@@ -10,16 +10,15 @@ class Promotion extends Model
     use HasFactory;
 
     protected $fillable = [
+        'promotion_id',
+        'event_id',
         'code',
-        'type',
-        'value',
-        'max_discount',
-        'min_order',
-        'valid_from',
-        'valid_until',
+        'status',
+        'start_date',
+        'end_date',
         'usage_limit',
         'usage_count',
-        'is_active'
+        'type_id',
     ];
 
     protected $casts = [
@@ -60,4 +59,13 @@ class Promotion extends Model
         return $this->hasMany(TicketOrder::class);
     }
 
+    public function promotion_rules()
+    {
+        return $this->hasMany(PromotionRules::class);
+    }
+
+    public function promotion_rule()
+    {
+        return $this->hasOne(PromotionRules::class);
+    }
 }

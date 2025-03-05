@@ -4,20 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class PromotionUsages extends Model
+class PromotionRules extends Model
 {
-    protected $table = 'promotion_usages';
+    protected $table = 'promotion_rules';
     protected $fillable = [
         'promotion_id',
-        'user_id',
-        'used_at',
+        'rule_type',
+        'rule_value',
     ];
 
     public function promotion(){
         return $this->belongsTo(Promotion::class);
-    }
-
-    public function user(){
-        return $this->belongsTo(User::class);
     }
 }
