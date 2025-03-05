@@ -10,9 +10,6 @@ class EventScheduleRecurring extends Model
     protected $fillable = [
         'event_id',
         'recurring_type',
-        'day',
-        'start_time',
-        'end_time'
     ];
 
     public function event(){
@@ -21,5 +18,17 @@ class EventScheduleRecurring extends Model
 
     public function scheduleDays(){
         return $this->hasMany(EventScheduleDays::class);
+    }
+
+    public function scheduleMonthly(){
+        return $this->hasMany(EventScheduleMonthly::class);
+    }
+
+    public function scheduleWeekly(){
+        return $this->hasMany(EventScheduleWeekly::class);
+    }
+
+    public function scheduleYearly(){
+        return $this->hasMany(EventScheduleYearly::class);
     }
 }

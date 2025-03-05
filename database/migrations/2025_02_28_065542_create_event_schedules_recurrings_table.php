@@ -15,8 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('event_id')->constrained()->onDelete('cascade');
             $table->enum('recurring_type', ['daily', 'weekly', 'monthly', 'yearly']);
-            $table->time('start_time')->nullable();
-            $table->time('end_time')->nullable();
             $table->timestamps();
         });
     }

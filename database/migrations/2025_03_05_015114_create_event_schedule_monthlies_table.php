@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('event_schedule_days', function (Blueprint $table) {
+        Schema::create('event_schedule_monthlies', function (Blueprint $table) {
             $table->id();
             $table->foreignId('event_schedule_recurring_id')->constrained('event_schedules_recurrings')->onDelete('cascade');
+            $table->integer('day')->check('day > 0 and day < 32');
             $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
             $table->timestamps();
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('event_schedule_days');
+        Schema::dropIfExists('event_schedule_monthlies');
     }
 };

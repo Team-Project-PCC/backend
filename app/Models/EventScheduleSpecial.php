@@ -10,10 +10,8 @@ class EventScheduleSpecial extends Model
 
     protected $fillable = [
         'event_id',
-        'start_date',
-        'end_date',
-        'start_time',
-        'end_time'
+        'start_datetime',
+        'end_datetime',
     ];
 
     public function event(){
