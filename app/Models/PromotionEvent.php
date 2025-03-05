@@ -4,20 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class EventPromotions extends Model
+class PromotionEvent extends Model
 {
-    protected $table = 'event_promotions';
-
+    protected $table = 'promotion_events';
     protected $fillable = [
+        'promotion_id',
         'event_id',
-        'promotion_id'
     ];
-
-    public function event(){
-        return $this->belongsTo(Event::class);
-    }
 
     public function promotion(){
         return $this->belongsTo(Promotion::class);
+    }
+
+    public function event(){
+        return $this->belongsTo(Event::class);
     }
 }

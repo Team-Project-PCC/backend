@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained();
             $table->integer('order_id')->constrained();
             $table->timestamps();
+
+            $table->unique(['promotion_id', 'user_id']);
         });
     }
 

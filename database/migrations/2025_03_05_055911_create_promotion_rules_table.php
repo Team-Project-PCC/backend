@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('promotion_rules', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('promotion_id')->constrained();
-            $table->enum('rule_type', ['precentage', 'max_discount', 'min_order']);
-            $table->string('rule_value');
+            $table->foreignId('promotion_id')->constrained()->onDelete('cascade');
+            $table->enum('rule_type', ['max_discount', 'min_order', '']);
+            $table->decimal('rule_value', 10, 2);
             $table->timestamps();
         });
     }

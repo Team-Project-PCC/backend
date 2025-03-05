@@ -11,11 +11,11 @@ use App\Http\Controllers\Auth\{
 };
 use App\Http\Controllers\Event\{
     EventController,
-    PromotionController
 };
 use App\Http\Controllers\Promotion\{
     PromotionTypeController,
-    PromotionRuleController
+    PromotionRuleController,
+    PromotionController
 };
 use App\Http\Controllers\Order\TicketController;
 
@@ -43,9 +43,3 @@ Route::get('events/{id}', [EventController::class, 'show']);
 Route::apiResource('promo', PromotionController::class)->middleware('role:admin')->except(['index', 'show']);
 Route::get('promo', [PromotionController::class, 'index']);
 Route::get('promo/{id}', [PromotionController::class, 'show']);
-
-// Promotion Type Routes
-Route::apiResource('promotion-types', PromotionTypeController::class)->middleware('role:admin')->except(['store']);
-
-// Promotion Rules Routes
-Route::apiResource('promo/rules', PromotionRuleController::class)->middleware('role:admin')->except(['index', 'show']);

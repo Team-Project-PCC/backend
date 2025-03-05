@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('promotion_types', function (Blueprint $table) {
+        Schema::create('promotion_events', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->foreignId('promotion_id')->constrained()->onDelete('cascade');
+            $table->foreignId('event_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -23,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('promotion_types');
+        Schema::dropIfExists('promotion_events');
     }
 };

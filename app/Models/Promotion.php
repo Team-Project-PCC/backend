@@ -10,15 +10,14 @@ class Promotion extends Model
     use HasFactory;
 
     protected $fillable = [
-        'promotion_id',
-        'event_id',
         'code',
-        'status',
-        'start_date',
-        'end_date',
-        'usage_limit',
-        'usage_count',
-        'type_id',
+        'type',
+        'value',
+        'valid_from',
+        'valid_until',
+        'max_usage',
+        'current_usage',
+        'is_active',
     ];
 
     protected $casts = [
@@ -36,22 +35,7 @@ class Promotion extends Model
     {
         return $this->is_active &&
                now()->between($this->valid_from, $this->valid_until) &&
-               ($this->usage_limit === null || $this->usage_count < $this->usage_limit);
-    }
-
-    public function event()
-    {
-        return $this->belongsToMany(Event::class, 'event_promotions');
-    }
-
-    public function event_promotions()
-    {
-        return $this->hasMany(EventPromotions::class, 'promotion_id');
-    }
-
-    public function events()
-    {
-        return $this->belongsToMany(Event::class, 'event_promotions', 'promotion_id', 'event_id');
+               ($this->max_usage === null || $this->current_usage < $this->max_usage);
     }
 
     public function ticket_orders()
@@ -64,14 +48,13 @@ class Promotion extends Model
         return $this->hasMany(PromotionRules::class);
     }
 
-    public function promotion_type()
-    {
-        return $this->belongsTo(PromotionTypes::class, 'type_id');
-    }
-
     public function promotion_usages()
     {
         return $this->hasMany(PromotionUsages::class);
     }
 
+    public function promotion_events()
+    {
+        return $this->hasMany(PromotionEvent::class);
+    }
 }
