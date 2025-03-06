@@ -4,249 +4,125 @@ namespace App\Http\Controllers\Order;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Models\TicketOrder;
-use App\Models\Ticket;
 use App\Models\Promotion;
-use App\Models\User;
+use App\Models\PromotionRules;
 use App\Models\TicketOrderDetails;
 use App\Models\TicketCategory;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Validation\ValidationException;
 use Exception;
 
 class TicketController extends Controller
 {
-    public function index()
-    {
-        try {
-            $ticketOrders = TicketOrder::with('ticket', 'ticket.category', 'promotion')->get();
-            return response()->json([
-                'status' => 'success',
-                'data' => $ticketOrders
-            ], 200);
-        } catch (Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to fetch ticket orders',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function show($id)
-    {
-        try {
-            $ticketOrder = TicketOrder::with('ticket', 'ticket.category', 'promotion')->findOrFail($id);
-            return response()->json([
-                'status' => 'success',
-                'data' => $ticketOrder
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Ticket order not found'
-            ], 404);
-        } catch (Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to fetch ticket order',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function update(Request $request, $id)
-    {
-        try {
-            DB::beginTransaction();
-
-            $validated = $request->validate([
-                'quantity' => 'required|integer|min:1',
-            ]);
-
-            $ticketOrder = TicketOrder::findOrFail($id);
-            $ticketCategory = TicketCategory::findOrFail($ticketOrder->ticket->ticket_category_id);
-            
-            $totalPrice = $request->quantity * $ticketCategory->price;
-
-            $ticketOrder->update([
-                'total_quantity' => $request->quantity,
-                'total_price' => $totalPrice,
-            ]);
-
-            $ticketOrder->details()->update([
-                'quantity' => $request->quantity,
-                'subtotal' => $totalPrice,
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Ticket order updated successfully',
-                'data' => $ticketOrder
-            ], 200);
-        } catch (ValidationException $e) {
-            DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation error',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (ModelNotFoundException $e) {
-            DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Resource not found'
-            ], 404);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to update ticket order',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function destroy($id)
-    {
-        try {
-            $ticketOrder = TicketOrder::findOrFail($id);
-            $ticketOrder->delete();
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Ticket order deleted successfully'
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Ticket order not found'
-            ], 404);
-        } catch (Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to delete ticket order',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
     public function store(Request $request)
     {
-        try {
-            DB::beginTransaction();
-
-            $validated = $request->validate([
-                'event_id' => 'required|integer',
-                'ticket_category_id' => 'required|integer',
-                'quantity' => 'required|integer|min:1',
-                'code_promotion' => 'nullable|string',
+        try{
+            // Validasi request
+            $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'event_id' => 'required|exists:events,id',
+                'tickets' => 'required|array',
+                'tickets.*.ticket_category_id' => 'required|exists:ticket_categories,id',
+                'tickets.*.quantity' => 'required|integer|min:1',
+                'promotion_code' => 'nullable|string|exists:promotions,code',
             ]);
 
+            $totalQuantity = 0;
+            $totalPrice = 0;
+            $ticketDetails = [];
 
-            $user = User::findOrFail($request->user()->id);
-            $ticketCategory = TicketCategory::findOrFail($request->ticket_category_id);
-            $totalPrice = $request->quantity * $ticketCategory->price;
+            // Hitung harga total dan detail tiket
+            foreach ($request->tickets as $ticket) {
+                $ticketCategory = TicketCategory::findOrFail($ticket['ticket_category_id']);
+                $subtotal = $ticket['quantity'] * $ticketCategory->price;
+
+                $ticketDetails[] = [
+                    'ticket_category_id' => $ticketCategory->id,
+                    'quantity' => $ticket['quantity'],
+                    'price' => $ticketCategory->price,
+                    'subtotal' => $subtotal,
+                ];
+
+                $totalQuantity += $ticket['quantity'];
+                $totalPrice += $subtotal;
+            }
+
+            // Cek promo
             $promotion = null;
             $discount = 0;
-
-            $ticket = Ticket::create([
-                'event_id' => $request->event_id,
-                'ticket_category_id' => $request->ticket_category_id,
-                'user_id' => $user->id,
-            ]);
-
-            if ($request->code_promotion) {
-                $promotion = Promotion::where('code', $request->code_promotion)->first();
+            if ($request->filled('promotion_code')) {
+                $promotion = Promotion::where('code', $request->promotion_code)
+                    ->where('is_active', true)
+                    ->where('valid_from', '<=', now())
+                    ->where('valid_until', '>=', now())
+                    ->first();
 
                 if ($promotion) {
-                    $eventPromotion = DB::table('event_promotions')
-                        ->where('event_id', $request->event_id)
-                        ->where('promotion_id', $promotion->id) // Gunakan ID, bukan kode
-                        ->first();
+                    $promotionRules = PromotionRules::where('promotion_id', $promotion->id)->get();
 
-                    if (!$eventPromotion) {
-                        DB::rollBack();
-                        return response()->json([
-                            'status' => 'error',
-                            'message' => 'Promotion is not valid for this event',
-                        ], 400);
+                    // Cek aturan promo
+                    $isValidPromo = true;
+                    $maxDiscount = null;
+                    foreach ($promotionRules as $rule) {
+                        if ($rule->rule_type === 'min_order' && $totalPrice < $rule->rule_value) {
+                            $isValidPromo = false;
+                            break;
+                        }
+                        if ($rule->rule_type === 'max_discount') {
+                            $maxDiscount = $rule->rule_value;
+                        }
                     }
 
-                    // Validasi tanggal promosi
-                    if (now()->lt($promotion->valid_from) || now()->gt($promotion->valid_until)) {
-                        DB::rollBack();
-                        return response()->json([
-                            'status' => 'error',
-                            'message' => 'Promotion is expired or not yet active',
-                        ], 400);
-                    }
-
-                    // Hitung diskon
-                    if ($promotion->type == 'percentage') {
-                        $discount = ($totalPrice * $promotion->value) / 100;
-                        
-                        if ($promotion->max_discount && $discount > $promotion->max_discount) {
-                            $discount = $promotion->max_discount;
-                        }
-                        
-                        if ($promotion->min_discount && $discount < $promotion->min_discount) {
-                            $discount = $promotion->min_discount;
+                    if ($isValidPromo) {
+                        if ($promotion->type === 'fixed_discount') {
+                            $discount = $promotion->value;
+                        } elseif ($promotion->type === 'percentage') {
+                            $discount = ($promotion->value / 100) * $totalPrice;
                         }
 
+                        // Batasi diskon jika ada max_discount
+                        if ($maxDiscount !== null) {
+                            $discount = min($discount, $maxDiscount);
+                        }
+
+                        $totalPrice = max(0, $totalPrice - $discount);
                     } else {
-                        $discount = $promotion->value;
+                        $promotion = null; // Batalkan promo jika aturan tidak terpenuhi
                     }
-
-                    $totalPrice = max(0, $totalPrice - $discount);
                 }
             }
 
+            // Simpan order utama
             $ticketOrder = TicketOrder::create([
-                'ticket_id' => $ticket->id,
-                'total_quantity' => $request->quantity,
+                'user_id' => $request->user_id,
+                'event_id' => $request->event_id,
+                'total_quantity' => $totalQuantity,
                 'total_price' => $totalPrice,
-                'promotion_id' => $promotion ? $promotion->id : null, // Simpan ID, bukan kode
+                'promotion_id' => $promotion ? $promotion->id : null,
             ]);
 
-            TicketOrderDetails::create([
-                'ticket_order_id' => $ticketOrder->id,
-                'quantity' => $request->quantity,
-                'price' => $ticketCategory->price,
-                'subtotal' => $totalPrice,
-            ]);
-
-            DB::commit();
+            // Simpan detail tiket
+            foreach ($ticketDetails as $detail) {
+                TicketOrderDetails::create([
+                    'ticket_order_id' => $ticketOrder->id,
+                    'ticket_category_id' => $detail['ticket_category_id'],
+                    'quantity' => $detail['quantity'],
+                    'price' => $detail['price'],
+                    'subtotal' => $detail['subtotal'],
+                ]);
+            }
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Ticket ordered successfully',
-                'data' => $ticketOrder
+                'message' => $promotion ? 'Ticket order created with promotion applied!' : 'Ticket order created successfully!',
+                'order' => $ticketOrder,
+                'details' => $ticketOrder->ticketOrderDetails,
+                'discount_applied' => $discount,
             ], 201);
-        } catch (ValidationException $e) {
-            DB::rollBack();
+        } catch(Exception $e){
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation error',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (ModelNotFoundException $e) {
-            DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Resource not found'
-            ], 404);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to order ticket',
-                'error' => $e->getMessage()
+                'message' => 'Failed to create ticket order',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
 }

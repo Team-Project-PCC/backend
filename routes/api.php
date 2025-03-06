@@ -43,3 +43,5 @@ Route::get('events/{id}', [EventController::class, 'show']);
 Route::apiResource('promo', PromotionController::class)->middleware('role:admin')->except(['index', 'show']);
 Route::get('promo', [PromotionController::class, 'index']);
 Route::get('promo/{id}', [PromotionController::class, 'show']);
+
+Route::apiResource('order', TicketController::class)->middleware('role:user')->except(['index', 'show']);

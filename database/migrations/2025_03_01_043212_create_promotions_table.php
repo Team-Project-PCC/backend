@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('value', 10, 2);
             $table->dateTime('valid_from');
             $table->dateTime('valid_until');
-            $table->integer('max_usage'); 
+            $table->integer('max_usage')->nullable(); 
             $table->integer('current_usage')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();

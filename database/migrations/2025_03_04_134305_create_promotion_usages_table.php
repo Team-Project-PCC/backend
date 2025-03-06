@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('promotion_id')->constrained();
             $table->foreignId('user_id')->constrained();
-            $table->integer('order_id')->constrained();
+            $table->foreignId('order_id')->constrained('ticket_orders')->onDelete('cascade');
             $table->timestamps();
 
             $table->unique(['promotion_id', 'user_id']);
