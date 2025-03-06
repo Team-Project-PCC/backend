@@ -8,6 +8,8 @@ class TicketOrder extends Model
 {
     protected $table = 'ticket_orders';
     protected $fillable = [
+        'event_id',
+        'user_id',
         'ticket_id',
         'total_quantity',
         'promotions_id',

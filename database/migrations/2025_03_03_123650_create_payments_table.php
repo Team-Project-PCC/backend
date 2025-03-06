@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('ticket_id')->constrained()->onDelete('cascade');
             $table->enum('method', ['credit_card', 'bank_transfer', 'paypal']);
             $table->enum('status', ['pending', 'success', 'failed']);
             $table->string('payment_url')->nullable();
