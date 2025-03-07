@@ -7,13 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     protected $fillable = [
-        'ticket_id',
+        'ticket_order_id',
         'user_id',
         'amount',
         'snap_token',
         'method',
         'status',
-        'payment_url',
     ];
 
     public function ticket()
