@@ -12,6 +12,7 @@ use App\Models\TicketCategory;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Payment;
 
 class TicketController extends Controller
 {
@@ -25,6 +26,7 @@ class TicketController extends Controller
                 'tickets.*.ticket_category_id' => 'required|exists:ticket_categories,id',
                 'tickets.*.quantity' => 'required|integer|min:1',
                 'promotion_code' => 'nullable|string|exists:promotions,code',
+                'payment method' => 'required|in:credit_card,bank_transfer,paypal',
             ]);
 
             $totalQuantity = 0;
@@ -122,6 +124,11 @@ class TicketController extends Controller
             ]);
 
             $ticketOrder = TicketOrder::with('ticketOrderDetails')->find($ticketOrder->id);
+
+            $payment = Payment::create([
+                'method' => $request->payment_method,
+                'status' => 'pending',
+            ]);
 
             return response()->json([
                 'message' => $promotion ? 'Ticket order created with promotion applied!' : 'Ticket order created successfully!',
