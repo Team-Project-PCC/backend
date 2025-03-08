@@ -17,6 +17,7 @@ use Midtrans\Config;
 use Midtrans\Snap;
 use Midtrans\Notification;
 use Illuminate\Support\Facades\DB;
+use App\Models\PromotionUsages;
 
 class TicketController extends Controller
 {
@@ -24,7 +25,6 @@ class TicketController extends Controller
     public function __construct(Request $request)
     {
         $this->request = $request;
-        // Set midtrans configuration
         Config::$serverKey = config('services.midtrans.serverKey');
         Config::$isProduction = config('services.midtrans.isProduction');
         Config::$isSanitized = config('services.midtrans.isSanitized');
@@ -33,6 +33,7 @@ class TicketController extends Controller
 
     public function store(Request $request)
     {
+        DB::beginTransaction();
         try{
             // Validasi request
             $request->validate([
@@ -75,8 +76,19 @@ class TicketController extends Controller
                     ->where('valid_until', '>=', now())
                     ->first();
 
+                    $user = Auth::user();
+
                 Log::info('Promotion: ' . $promotion);
                 if ($promotion) {
+                    if ($promotion && $promotion->usage_limit > 0) {
+                        $usedCount = TicketOrder::where('user_id', $user->id)
+                            ->where('promotion_id', $promotion->id)
+                            ->count();
+                        if ($usedCount >= $promotion->usage_limit) {
+                            return response()->json(['message' => 'Promotion code has exceeded usage limit'], 400);
+                        }
+                    }
+
                     $promotionRules = PromotionRules::where('promotion_id', $promotion->id)->get();
 
                     // Cek aturan promo
@@ -173,6 +185,13 @@ class TicketController extends Controller
                 $payment->save();
             }
 
+            $promotion_useges = PromotionUsages::create([
+                'promotion_id' => $promotion ? $promotion->id : null,
+                'user_id' => $user->id,
+                'order_id' => $ticketOrder->id,
+            ]);
+
+            $promotion->increment('current_usage');
             $ticketOrder = TicketOrder::with('ticketOrderDetails', 'payment')->find($ticketOrder->id);
 
             DB::commit();
@@ -258,74 +277,5 @@ class TicketController extends Controller
         } catch (Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Failed to delete order', 'error' => $e->getMessage()], 500);
         }
-    }
-
-    /**
-     * Midtrans notification handler.
-     *
-     * @param Request $request
-     * 
-     * @return void
-     */
-    public function notificationHandler(Request $request)
-    {
-        $notif = new Notification($request);
-
-          $transaction = $notif->transaction_status;
-          $type = $notif->payment_type;
-          $orderId = $notif->order_id;
-          $fraud = $notif->fraud_status;
-          $donation = Payment::findOrFail($orderId);
-
-          if ($transaction == 'capture') {
-
-            // For credit card transaction, we need to check whether transaction is challenge by FDS or not
-            if ($type == 'credit_card') {
-
-              if($fraud == 'challenge') {
-                // TODO set payment status in merchant's database to 'Challenge by FDS'
-                // TODO merchant should decide whether this transaction is authorized or not in MAP
-                // $donation->addUpdate("Transaction order_id: " . $orderId ." is challenged by FDS");
-                $donation->setPending();
-              } else {
-                // TODO set payment status in merchant's database to 'Success'
-                // $donation->addUpdate("Transaction order_id: " . $orderId ." successfully captured using " . $type);
-                $donation->setSuccess();
-              }
-
-            }
-
-          } elseif ($transaction == 'settlement') {
-
-            // TODO set payment status in merchant's database to 'Settlement'
-            // $donation->addUpdate("Transaction order_id: " . $orderId ." successfully transfered using " . $type);
-            $donation->setSuccess();
-
-          } elseif($transaction == 'pending'){
-
-            // TODO set payment status in merchant's database to 'Pending'
-            // $donation->addUpdate("Waiting customer to finish transaction order_id: " . $orderId . " using " . $type);
-            $donation->setPending();
-
-          } elseif ($transaction == 'deny') {
-
-            // TODO set payment status in merchant's database to 'Failed'
-            // $donation->addUpdate("Payment using " . $type . " for transaction order_id: " . $orderId . " is Failed.");
-            $donation->setFailed();
-
-          } elseif ($transaction == 'expire') {
-
-            // TODO set payment status in merchant's database to 'expire'
-            // $donation->addUpdate("Payment using " . $type . " for transaction order_id: " . $orderId . " is expired.");
-            $donation->setExpired();
-
-          } elseif ($transaction == 'cancel') {
-
-            // TODO set payment status in merchant's database to 'Failed'
-            // $donation->addUpdate("Payment using " . $type . " for transaction order_id: " . $orderId . " is canceled.");
-            $donation->setFailed();
-
-          }
-
     }
 }

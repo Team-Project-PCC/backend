@@ -8,6 +8,7 @@ class PromotionUsages extends Model
 {
     protected $table = 'promotion_usages';
     protected $fillable = [
+        'order_id',
         'promotion_id',
         'user_id',
         'used_at',

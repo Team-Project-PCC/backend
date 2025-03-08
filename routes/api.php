@@ -13,11 +13,11 @@ use App\Http\Controllers\Event\{
     EventController,
 };
 use App\Http\Controllers\Promotion\{
-    PromotionTypeController,
-    PromotionRuleController,
     PromotionController
 };
 use App\Http\Controllers\Order\TicketController;
+
+use App\Http\Controllers\Notification\MidtransController;
 
 // Authentication Routes
 Route::post('/register', [RegisterController::class, 'register']);
@@ -45,3 +45,5 @@ Route::get('promo', [PromotionController::class, 'index']);
 Route::get('promo/{id}', [PromotionController::class, 'show']);
 
 Route::apiResource('ticket', TicketController::class)->middleware('role:user')->except(['index', 'show']);
+
+Route::post('/notification/midtrans', [MidtransController::class, 'handleMidtransNotification']);

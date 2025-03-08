@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('amount', 15, 2);
             $table->string('snap_token')->nullable();
             $table->enum('method', ['cashless', 'cash']);
-            $table->enum('status', ['pending', 'success', 'failed', 'expired']);
+            $table->enum('status', ['pending', 'success', 'failed', 'expired', 'refunded', 'cancelled', 'denied'])->default('pending');
             $table->timestamps();
         });
     }
