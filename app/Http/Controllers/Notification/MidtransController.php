@@ -81,7 +81,10 @@ class MidtransController extends Controller
             return response()->json(['message' => 'Payment success']);
         } catch (Exception $e) {
             Log::error('Midtrans Success Error: ' . $e->getMessage());
-            return response()->json(['message' => 'Error updating payment status'], 500);
+            return response()->json([
+                'message' => 'Error updating payment status',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
