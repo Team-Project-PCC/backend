@@ -185,13 +185,16 @@ class TicketController extends Controller
                 $payment->save();
             }
 
-            $promotion_useges = PromotionUsages::create([
-                'promotion_id' => $promotion ? $promotion->id : null,
-                'user_id' => $user->id,
-                'order_id' => $ticketOrder->id,
-            ]);
-
-            $promotion->increment('current_usage');
+            if ($promotion) {
+                PromotionUsages::create([
+                    'promotion_id' => $promotion->id,
+                    'user_id' => $user->id,
+                    'order_id' => $ticketOrder->id,
+                ]);
+            
+                $promotion->increment('current_usage');
+            }
+            
             $ticketOrder = TicketOrder::with('ticketOrderDetails', 'payment')->find($ticketOrder->id);
 
             DB::commit();
