@@ -46,4 +46,7 @@ Route::get('promo/{id}', [PromotionController::class, 'show']);
 
 Route::apiResource('ticket', TicketController::class)->middleware('role:user')->except(['index', 'show']);
 
-Route::post('/notification/midtrans', [MidtransController::class, 'handleMidtransNotification']);
+Route::post('/midtrans/callback', [MidtransController::class, 'callback']);
+Route::post('/midtrans/success', [MidtransController::class, 'success']);
+Route::post('/midtrans/failed', [MidtransController::class, 'failed']);
+Route::post('/midtrans/cancel', [MidtransController::class, 'cancel']);

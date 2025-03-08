@@ -9,53 +9,117 @@ use Midtrans\Config;
 use Midtrans\Notification;
 use App\Models\Payment;
 use Exception;
+use Illuminate\Support\Facades\DB;
+use App\Models\TicketOrder;
 
 class MidtransController extends Controller
 {
-    public function handleMidtransNotification(Request $request)
+    public function callback(Request $request)
     {
+        $serverKey = config('midtrans.server_key');
+        $hashed = hash("sha512", $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
+
+        if ($hashed !== $request->signature_key) {
+            return response()->json(['message' => 'Invalid signature'], 403);
+        }
+
+        DB::beginTransaction();
         try {
-            $notif = new Notification();
-
-            $transaction = $notif->transaction_status;
-            $orderId = $notif->order_id;
-            $fraudStatus = $notif->fraud_status;
-
-            Log::info("Midtrans Notification received for Order ID: $orderId with status: $transaction");
-
-            // Cari pembayaran berdasarkan ID transaksi
-            $payment = Payment::where('id', $orderId)->first();
+            $payment = Payment::where('id', $request->order_id)->first();
 
             if (!$payment) {
                 return response()->json(['message' => 'Payment not found'], 404);
             }
 
-            // Perbarui status berdasarkan Midtrans notification
-            if ($transaction == 'capture') {
-                if ($fraudStatus == 'accept') {
-                    $payment->update(['status' => 'success']);
-                } else {
-                    $payment->update(['status' => 'denied']); // Jika fraud status bukan 'accept'
-                }
-            } elseif ($transaction == 'settlement') {
-                $payment->update(['status' => 'success']);
-            } elseif ($transaction == 'pending') {
-                $payment->update(['status' => 'pending']);
-            } elseif ($transaction == 'deny') {
-                $payment->update(['status' => 'denied']); // Transaksi ditolak oleh Midtrans
-            } elseif ($transaction == 'cancel') {
-                $payment->update(['status' => 'cancelled']); // Transaksi dibatalkan oleh user
-            } elseif ($transaction == 'expire') {
-                $payment->update(['status' => 'expired']);
-            } elseif ($transaction == 'refund') {
-                $payment->update(['status' => 'refunded']);
+            $ticketOrder = TicketOrder::where('id', $payment->ticket_order_id)->first();
+
+            if (!$ticketOrder) {
+                return response()->json(['message' => 'Order not found'], 404);
             }
 
-            return response()->json(['message' => 'Notification processed successfully'], 200);
+            switch ($request->transaction_status) {
+                case 'settlement': // Payment successful
+                case 'capture':
+                    $payment->status = 'finished';
+                    $ticketOrder->status = 'paid';
+                    break;
+                case 'pending':
+                    $payment->status = 'pending';
+                    break;
+                case 'expire':
+                case 'cancel':
+                case 'deny':
+                    $payment->status = 'failed';
+                    $ticketOrder->status = 'unpaid';
+                    break;
+            }
+
+            $payment->save();
+            $ticketOrder->save();
+            
+            DB::commit();
+            return response()->json(['message' => 'Payment status updated successfully']);
         } catch (Exception $e) {
-            Log::error("Midtrans Notification Error: " . $e->getMessage());
-            return response()->json(['message' => 'Failed to process notification'], 500);
+            DB::rollBack();
+            Log::error('Midtrans Callback Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Error updating payment status'], 500);
         }
     }
 
+    public function success(Request $request)
+    {
+        try{
+            $payment = Payment::where('order_id', $request->order_id)->first();
+
+            if (!$payment) {
+                return response()->json(['message' => 'Payment not found'], 404);
+            } else{
+                $payment->status = 'success';
+                $payment->save();
+            }
+
+            return response()->json(['message' => 'Payment success']);
+        } catch (Exception $e) {
+            Log::error('Midtrans Success Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Error updating payment status'], 500);
+        }
+    }
+
+    public function failed(Request $request)
+    {
+        try{
+            $payment = Payment::where('order_id', $request->order_id)->first();
+
+            if (!$payment) {
+                return response()->json(['message' => 'Payment not found'], 404);
+            } else{
+                $payment->status = 'failed';
+                $payment->save();
+            }
+
+            return response()->json(['message' => 'Payment failed']);
+        } catch (Exception $e) {
+            Log::error('Midtrans Failed Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Error updating payment status'], 500);
+        }
+    }
+
+    public function cancel(Request $request)
+    {
+        try{
+            $payment = Payment::where('order_id', $request->order_id)->first();
+
+            if (!$payment) {
+                return response()->json(['message' => 'Payment not found'], 404);
+            } else{
+                $payment->status = 'cancelled';
+                $payment->save();
+            }
+
+            return response()->json(['message' => 'Payment cancelled']);
+        } catch (Exception $e) {
+            Log::error('Midtrans Cancel Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Error updating payment status'], 500);
+        }
+    }
 }
