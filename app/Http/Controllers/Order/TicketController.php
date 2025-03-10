@@ -178,6 +178,7 @@ class TicketController extends Controller
                             'name' => 'Ticket Order',
                         ],
                     ],
+                    'promo' => 'awwww'
                 ];
     
                 $snapToken = Snap::getSnapToken($payload);
@@ -194,7 +195,7 @@ class TicketController extends Controller
             
                 $promotion->increment('current_usage');
             }
-            
+
             $ticketOrder = TicketOrder::with('ticketOrderDetails', 'payment')->find($ticketOrder->id);
 
             DB::commit();

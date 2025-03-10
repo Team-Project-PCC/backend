@@ -16,11 +16,12 @@ class MidtransController extends Controller
 {
     public function callback(Request $request)
     {
-        $serverKey = config('midtrans.server_key');
+        $serverKey = config('services.midtrans.serverKey');
         $hashed = hash("sha512", $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
 
         if ($hashed !== $request->signature_key) {
-            return response()->json(['message' => 'Invalid signature'], 403);
+            return response()->json([
+                'message' => 'Invalid signature'], 403);
         }
 
         DB::beginTransaction();
@@ -38,7 +39,7 @@ class MidtransController extends Controller
             }
 
             switch ($request->transaction_status) {
-                case 'settlement': // Payment successful
+                case 'settlement':
                 case 'capture':
                     $payment->status = 'finished';
                     $ticketOrder->status = 'paid';
@@ -62,7 +63,10 @@ class MidtransController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('Midtrans Callback Error: ' . $e->getMessage());
-            return response()->json(['message' => 'Error updating payment status'], 500);
+            return response()->json([
+                'message' => 'Error updating payment status',
+                'error' => $e
+            ], 500);
         }
     }
 
