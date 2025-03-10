@@ -11,6 +11,23 @@ use Illuminate\Support\Facades\Validator;
 
 class AccountController extends Controller
 {
+    public function profile()
+    {
+        $user = User::find(Auth::id());
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $user
+        ], 200);
+    }
+    
     public function update_profile(Request $request)
     {
         try {

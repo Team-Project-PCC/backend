@@ -21,7 +21,7 @@ class EventController extends Controller
     public function index()
     {
         try {
-            $event = Event::with([
+            $events = Event::with([
                 'ticket_categories',
                 'event_schedules_recurring.scheduleDays',
                 'event_schedules_recurring.scheduleWeekly',
@@ -31,48 +31,53 @@ class EventController extends Controller
                 'event_images'
             ])->get();
 
-            if ($event->ticket_categories->isEmpty()) {
-                $event->unsetRelation('ticket_categories');
-            }
-            if ($event->event_schedules_recurring->isEmpty()) {
-                $event->unsetRelation('event_schedules_recurring');
-            }
-            if ($event->event_schedules_special->isEmpty()) {
-                $event->unsetRelation('event_schedules_special');
-            }
-            if ($event->event_images->isEmpty()) {
-                $event->unsetRelation('event_images');
-            }
+            foreach ($events as $event) {
+                if ($event->ticket_categories->isEmpty()) {
+                    $event->unsetRelation('ticket_categories');
+                }
+                if ($event->event_schedules_recurring->isEmpty()) {
+                    $event->unsetRelation('event_schedules_recurring');
+                }
+                if ($event->event_schedules_special->isEmpty()) {
+                    $event->unsetRelation('event_schedules_special');
+                }
+                if ($event->event_images->isEmpty()) {
+                    $event->unsetRelation('event_images');
+                }
 
-            if ($event->relationLoaded('event_schedules_recurring')) {
-                foreach ($event->event_schedules_recurring as $recurring) {
-                    if ($recurring->scheduleDays->isEmpty()) {
-                        $recurring->unsetRelation('scheduleDays');
-                    }
-                    if ($recurring->scheduleWeekly->isEmpty()) {
-                        $recurring->unsetRelation('scheduleWeekly');
-                    }
-                    if ($recurring->scheduleMonthly->isEmpty()) {
-                        $recurring->unsetRelation('scheduleMonthly');
-                    }
-                    if ($recurring->scheduleYearly->isEmpty()) {
-                        $recurring->unsetRelation('scheduleYearly');
+                if ($event->relationLoaded('event_schedules_recurring')) {
+                    foreach ($event->event_schedules_recurring as $recurring) {
+                        if ($recurring->scheduleDays->isEmpty()) {
+                            $recurring->unsetRelation('scheduleDays');
+                        }
+                        if ($recurring->scheduleWeekly->isEmpty()) {
+                            $recurring->unsetRelation('scheduleWeekly');
+                        }
+                        if ($recurring->scheduleMonthly->isEmpty()) {
+                            $recurring->unsetRelation('scheduleMonthly');
+                        }
+                        if ($recurring->scheduleYearly->isEmpty()) {
+                            $recurring->unsetRelation('scheduleYearly');
+                        }
                     }
                 }
             }
-            
+
             return response()->json([
                 'status' => 'success',
-                'message' => 'Event successfully created',
-                'event'  => $event
-            ], 201);
+                'message' => 'Events retrieved successfully',
+                'events'  => $events
+            ], 200);
+
         } catch (\Exception $e) {
+            Log::error($e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => $e->getMessage()
-            ]);
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ], 500);
         }
     }
+
 
     public function show($id)
     {
