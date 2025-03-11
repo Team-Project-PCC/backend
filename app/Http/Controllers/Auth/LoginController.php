@@ -13,6 +13,40 @@ use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 
 class LoginController extends Controller
 {
+    public function show_user_by_id($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            return response()->json([
+                'status' => 'success',
+                'user' => $user,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Login error: ' . $e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to login',
+            ], 500);
+        } catch (TokenExpiredException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Token expired',
+            ], 401);
+        } catch (TokenExpiredException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Token invalid',
+            ], 400);
+        } catch (\Exception $e) {
+            Log::error('Logout error: ' . $e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to logout',
+            ], 405);
+        }
+    }
     public function show()
     {
         try{
