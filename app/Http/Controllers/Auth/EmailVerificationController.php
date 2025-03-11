@@ -15,27 +15,22 @@ class EmailVerificationController extends Controller
     {
         $user = User::findOrFail($id);
     
-        // Periksa apakah hash cocok dengan email pengguna
         if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
             return response()->json(['message' => 'Invalid verification link'], 400);
         }
-    
-        // Jika email sudah terverifikasi sebelumnya
+
         if ($user->hasVerifiedEmail()) {
             return response()->json(['message' => 'Email already verified'], 200);
         }
     
-        // Tandai email sebagai terverifikasi
         $user->markEmailAsVerified();
         $user->email_verified_at = now();
         $user->save();
     
-        // **Menggunakan Laravel Sanctum**
         if (config('auth.defaults.guard') === 'sanctum') {
             Auth::login($user->first());
             $token = $user->createToken('AuthToken')->plainTextToken;
         } 
-        // **Menggunakan JWT**
         else {
             try {
                 if (!$token = JWTAuth::fromUser($user)) {
