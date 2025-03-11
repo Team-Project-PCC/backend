@@ -49,7 +49,7 @@ class EmailVerificationController extends Controller
         return response()->json([
             'message' => 'Email verified successfully',
             'token' => $token,
-            'redirect_to' => url('/dashboard')
+            'user' => $user
         ], 200);
     }
 
