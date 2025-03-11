@@ -46,11 +46,7 @@ class EmailVerificationController extends Controller
             }
         }
     
-        return response()->json([
-            'message' => 'Email verified successfully',
-            'token' => $token,
-            'user' => $user
-        ], 200);
+        return redirect()->away(env('FRONTEND_URL') . "/dashboard?token=$token");
     }
 
     /**
