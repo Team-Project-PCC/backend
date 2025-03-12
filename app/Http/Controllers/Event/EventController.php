@@ -134,6 +134,57 @@ class EventController extends Controller
         }
     }
 
+    public function show_schedule($schedule){
+        try{
+            $event = Event::with([
+                'ticket_categories',
+                'event_schedules_recurring.scheduleDays',
+                'event_schedules_recurring.scheduleWeekly',
+                'event_schedules_recurring.scheduleMonthly',
+                'event_schedules_recurring.scheduleYearly',
+                'event_schedules_special',
+                'event_images'
+            ]);
+
+            if($schedule == 'day'){
+                $event = $event->whereHas('event_schedules_recurring.scheduleDays');
+            } else if($schedule == 'weekly'){
+                $event = $event->whereHas('event_schedules_recurring.scheduleWeekly');
+            } else if($schedule == 'monthly'){
+                $event = $event->whereHas('event_schedules_recurring.scheduleMonthly');
+            } else if($schedule == 'yearly'){
+                $event = $event->whereHas('event_schedules_recurring.scheduleYearly');
+            } else if($schedule == 'special'){
+                $event = $event->whereHas('event_schedules_special');
+            } else if($schedule == 'recurring'){
+                $event = $event->whereHas('event_schedules_recurring');
+            } else if($schedule == 'open'){
+                $event = $event->where('status', 'published');
+            } else if($schedule == 'closed'){
+                $event = $event->where('status', 'closed');
+            } else if($schedule == 'draft'){
+                $event = $event->where('status', 'draft');
+            } else {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid schedule type'
+                ], 400);
+            }
+
+            $events = $event->get();
+
+            return response()->json([
+                'status' => 'success',
+                'events' => $events
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try {

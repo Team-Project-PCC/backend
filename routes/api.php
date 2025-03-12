@@ -42,6 +42,7 @@ Route::post('/update_profile', [AccountController::class, 'update_profile']);
 Route::apiResource('events', EventController::class)->middleware('role:admin')->except(['index', 'show']);
 Route::get('events', [EventController::class, 'index']);
 Route::get('events/{id}', [EventController::class, 'show']);
+Route::get('events/serch/{schedule}', [EventController::class, 'show_schedule']);
 
 // Promotion Routes
 Route::apiResource('promo', PromotionController::class)->middleware('role:admin')->except(['index', 'show']);
