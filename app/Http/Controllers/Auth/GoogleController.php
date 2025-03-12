@@ -2,48 +2,82 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
-use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
-use Illuminate\Http\JsonResponse;
-use Laravel\Socialite\Contracts\User as SocialiteUser;
-use GuzzleHttp\Exception\ClientException;
+use App\Http\Controllers\Controller;
+use Google_Client;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class GoogleController extends Controller
 {
-    public function redirectToGoogle(): JsonResponse {
-        return response()->json([
-            'url' => Socialite::driver('google')
-                         ->stateless()
-                         ->redirect()
-                         ->getTargetUrl(),
-        ]);
-    }
-    
-    public function handleGoogleCallback(): JsonResponse {
+    // Method Sign Up
+    public function signUpWithGoogle(Request $request)
+    {
         try {
-            /** @var SocialiteUser $socialiteUser */
-            $socialiteUser = Socialite::driver('google')->stateless()->user();
-        } catch (ClientException $e) {
-            return response()->json(['error' => 'Invalid credentials provided.'], 422);
+            $token = $request->input('id_token');
+            $client = new Google_Client(['client_id' => config('services.google.client_id')]);
+            $payload = $client->verifyIdToken($token);
+
+            if (!$payload) {
+                return response()->json(['error' => 'Invalid Google token'], 401);
+            }
+
+            $googleId = $payload['sub'];
+            $email = $payload['email'];
+            $name = $payload['name'];
+
+            $user = User::where('email', $email)->first();
+
+            if ($user) {
+                return response()->json(['error' => 'User already exists. Please log in instead.'], 409);
+            }
+
+            $user = User::create([
+                'name' => $name,
+                'email' => $email,
+                'google_id' => $googleId,
+                'password' => Hash::make(Str::random(16)), 
+            ]);
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => $user
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Something went wrong.'], 500);
         }
-        /** @var User $user */
-        $user = User::query()
-            ->firstOrCreate(
-                [
-                    'email' => $socialiteUser->getEmail(),
-                ],
-                [
-                    'email_verified_at' => now(),
-                    'name' => $socialiteUser->getName(),
-                    'google_id' => $socialiteUser->getId(),
-                    'avatar' => $socialiteUser->getAvatar(),
-                ]
-            );
-        return response()->json([
-            'user' => $user,
-            'access_token' => $user->createToken('google-token')->plainTextToken,
-            'token_type' => 'Bearer',
-        ]);
+    }
+
+
+    // Method Login
+    public function loginWithGoogle(Request $request)
+    {
+        $token = $request->input('id_token'); // Token dari aplikasi Android
+        $client = new Google_Client(['client_id' => config('services.google.client_id')]);
+        $payload = $client->verifyIdToken($token);
+
+        if ($payload) {
+            $email = $payload['email'];
+            $user = User::where('email', $email)->first();
+
+            if (!$user) {
+                return response()->json(['error' => 'User not found. Please sign up.'], 404);
+            }
+
+            // Generate token API atau JWT
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => $user
+            ], 200);
+        } else {
+            return response()->json(['error' => 'Invalid Google token'], 401);
+        }
     }
 }

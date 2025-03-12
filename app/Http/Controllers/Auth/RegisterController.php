@@ -40,11 +40,9 @@ class RegisterController extends Controller
                 ], 500);
             }
 
-            // Menetapkan peran
             $user->assignRole('user');
 
-            // Mengirim email verifikasi menggunakan queue
-            $user->sendEmailVerificationNotification(); // Pastikan sudah menggunakan queue di Mailer
+            $user->sendEmailVerificationNotification();
 
             return response()->json([
                 'success' => true,

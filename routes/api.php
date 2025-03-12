@@ -19,6 +19,8 @@ use App\Http\Controllers\Promotion\{
 use App\Http\Controllers\Order\TicketController;
 
 use App\Http\Controllers\Notification\MidtransController;
+use Illuminate\Http\Response;
+
 
 // Authentication Routes
 Route::post('/register', [RegisterController::class, 'register']);
@@ -61,5 +63,11 @@ Route::post('/midtrans/cancel', [MidtransController::class, 'cancel']);
 //     ->middleware(['guest'])
 //     ->name('callback');
 
-Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle']);
-Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
+Route::post('login/google', [GoogleController::class, 'loginWithGoogle']);
+Route::post('register/google', [GoogleController::class, 'signUpWithGoogle']);
+
+Route::fallback(function () {
+    return response()->json([
+        'message' => 'Resource not found'
+    ], Response::HTTP_NOT_FOUND);
+});
