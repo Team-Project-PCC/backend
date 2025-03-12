@@ -61,7 +61,8 @@ class AccountController extends Controller
                 $file = $request->file('image');
                 $filename = 'avatar_' . Auth::id() . '.' . $file->getClientOriginalExtension();
                 $path = $file->storeAs('avatars', $filename, 'public'); 
-                $dataToUpdate['url_avatar'] = Storage::url($path);
+                $imageUrl = asset('storage/' . $path);
+                $dataToUpdate['url_avatar'] = $imageUrl;
             }
 
             $user->update($dataToUpdate);
