@@ -437,6 +437,7 @@ class EventController extends Controller
                 TicketCategory::create([
                     'event_id' => $event->id,
                     'category' => $category['category'] ?? 'General',
+                    'description' => $category['description'] ?? null,
                     'price'    => $category['price'] ?? 0,
                     'quota'    => $category['quota'] ?? 0
                 ]);
