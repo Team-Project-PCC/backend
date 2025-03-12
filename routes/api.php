@@ -67,8 +67,10 @@ Route::post('/midtrans/cancel', [MidtransController::class, 'cancel']);
 Route::post('login/google', [GoogleController::class, 'loginWithGoogle']);
 Route::post('register/google', [GoogleController::class, 'signUpWithGoogle']);
 
-Route::fallback(function () {
+Route::any('{any}', function () {
     return response()->json([
-        'message' => 'Resource not found'
-    ], Response::HTTP_NOT_FOUND);
-});
+        'success' => false,
+        'message' => 'Route not found',
+        'errors' => ['detail' => 'The requested route does not exist.'],
+    ], 404);
+})->where('any', '.*');

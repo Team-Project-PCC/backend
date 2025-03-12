@@ -14,7 +14,8 @@ use App\Models\EventImage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EventScheduleMonthly;
-use App\Models\EventScheduleYearly; 
+use App\Models\EventScheduleYearly;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class EventController extends Controller
 {
@@ -336,8 +337,14 @@ class EventController extends Controller
                 'event'  => $event
             ], 201);
             
+        } catch (AuthorizationException $e) {
+            Log::error($e);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized: ' . $e->getMessage()
+            ], 403);
         } catch (\Exception $e) {
-            Log::error($e->getMessage());
+            Log::error($e);
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred: ' . $e->getMessage()

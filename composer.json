@@ -13,6 +13,7 @@
         "laravel/socialite": "^5.18",
         "laravel/tinker": "^2.9",
         "midtrans/midtrans-php": "^2.6",
+        "openai-php/client": "^0.10.3",
         "spatie/laravel-permission": "^6.16",
         "tymon/jwt-auth": "^2.1"
     },
