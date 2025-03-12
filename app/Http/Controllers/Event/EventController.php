@@ -336,13 +336,6 @@ class EventController extends Controller
                 'message' => 'Event successfully created',
                 'event'  => $event
             ], 201);
-            
-        } catch (AuthorizationException $e) {
-            Log::error($e);
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized: ' . $e->getMessage()
-            ], 403);
         } catch (\Exception $e) {
             Log::error($e);
             return response()->json([
