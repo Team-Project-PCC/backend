@@ -7,7 +7,8 @@ use App\Http\Controllers\Auth\{
     LoginController,
     EmailVerificationController,
     LogoutController,
-    AccountController
+    AccountController,
+    GoogleController
 };
 use App\Http\Controllers\Event\{
     EventController,
@@ -51,3 +52,14 @@ Route::post('/midtrans/callback', [MidtransController::class, 'callback']);
 Route::post('/midtrans/success', [MidtransController::class, 'success']);
 Route::post('/midtrans/failed', [MidtransController::class, 'failed']);
 Route::post('/midtrans/cancel', [MidtransController::class, 'cancel']);
+
+// Route::get('login/google/redirect', [GoogleController::class, 'redirectToGoogle'])
+//     ->middleware(['guest'])
+//     ->name('redirect');
+
+// Route::get('login/google/callback', [GoogleController::class, 'handleGoogleCallback'])
+//     ->middleware(['guest'])
+//     ->name('callback');
+
+Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle']);
+Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);

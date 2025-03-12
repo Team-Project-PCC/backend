@@ -32,11 +32,18 @@ return [
     ],
 
     'midtrans' => [
-    'serverKey'     => env('MIDTRANS_SERVERKEY'),
-    'clientKey'     => env('MIDTRANS_CLIENTKEY'),
-    'isProduction'  => env('MIDTRANS_IS_PRODUCTION', false),
-    'isSanitized'   => env('MIDTRANS_IS_SANITIZED', true),
-    'is3ds'         => env('MIDTRANS_IS_3DS', true),
+        'serverKey'     => env('MIDTRANS_SERVERKEY'),
+        'clientKey'     => env('MIDTRANS_CLIENTKEY'),
+        'isProduction'  => env('MIDTRANS_IS_PRODUCTION', false),
+        'isSanitized'   => env('MIDTRANS_IS_SANITIZED', true),
+        'is3ds'         => env('MIDTRANS_IS_3DS', true),
     ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
 
 ];
