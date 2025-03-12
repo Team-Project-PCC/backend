@@ -10,6 +10,7 @@ class TicketCategory extends Model
     protected $fillable = [
         'event_id',
         'category',
+        'description',
         'price',
         'quota',
     ];

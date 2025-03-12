@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('event_id')->constrained()->onDelete('cascade');
             $table->enum('category', ['child', 'regular', 'student', 'vip']);
+            $table->text('description')->nullable();
             $table->decimal('price', 10, 2);
             $table->integer('quota');
             $table->timestamps();
