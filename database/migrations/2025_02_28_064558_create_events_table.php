@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('description');
-            $table->enum('status', ['draft', 'published', 'closed']);
+            $table->enum('status', ['open', 'close']);
             $table->enum('type',['recurring', 'special']);
             $table->timestamps();
         });

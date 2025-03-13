@@ -160,11 +160,9 @@ class EventController extends Controller
             } else if($schedule == 'recurring'){
                 $event = $event->whereHas('event_schedules_recurring');
             } else if($schedule == 'open'){
-                $event = $event->where('status', 'published');
-            } else if($schedule == 'closed'){
-                $event = $event->where('status', 'closed');
-            } else if($schedule == 'draft'){
-                $event = $event->where('status', 'draft');
+                $event = $event->where('status', 'open');
+            } else if($schedule == 'close'){
+                $event = $event->where('status', 'close');
             } else {
                 return response()->json([
                     'status' => 'error',
@@ -194,7 +192,7 @@ class EventController extends Controller
                 'title'       => 'required|string',
                 'description' => 'required|string',
                 'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'status'      => 'required|in:draft,published,closed',
+                'status'      => 'required|in:open,close',
                 'type'        => 'required|in:recurring,special',
                 'schedule'    => 'required|json',
                 'category'    => 'required|json',
@@ -353,7 +351,7 @@ class EventController extends Controller
                 'title'       => 'required|string',
                 'description' => 'required|string',
                 'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'status'      => 'required|in:draft,published,closed',
+                'status'      => 'required|in:open,close',
                 'type'        => 'required|in:recurring,special',
                 'schedule'    => 'required|json',
                 'category'    => 'required|json',
