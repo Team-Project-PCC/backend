@@ -352,13 +352,13 @@ class EventController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'title'       => 'required|string',
-                'description' => 'required|string',
+                'title'       => 'nullable|string',
+                'description' => 'nullable|string',
                 'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'status'      => 'required|in:open,close',
-                'type'        => 'required|in:recurring,special',
-                'schedule'    => 'required|json',
-                'category'    => 'required|json',
+                'status'      => 'nullable|in:open,close',
+                'type'        => 'nullable|in:recurring,special',
+                'schedule'    => 'nullable|json',
+                'category'    => 'nullable|json',
             ]);
 
             if ($validator->fails()) {

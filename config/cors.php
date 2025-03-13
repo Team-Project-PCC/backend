@@ -19,9 +19,9 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://museumgitarupa.vercel.app'],
+    'allowed_origins' => ['https://museumgitarupa.vercel.app', 'http://localhost:3000', 'http://192.168.1.10:3000'],
 
-    'Access-Control-Allow-Origin' => ['https://museumgitarupa.vercel.app'],
+    'Access-Control-Allow-Origin' => ['https://museumgitarupa.vercel.app', 'http://localhost:3000', 'http://192.168.1.10:3000'],
 
     'allowed_origins_patterns' => [],
 
