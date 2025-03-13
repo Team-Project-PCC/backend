@@ -93,6 +93,13 @@ class EventController extends Controller
                 'event_images'
             ])->find($id);
 
+            if (!$event) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Event not found'
+                ], 404);
+            }            
+
             if ($event->ticket_categories->isEmpty()) {
                 $event->unsetRelation('ticket_categories');
             }
@@ -147,28 +154,24 @@ class EventController extends Controller
                 'event_images'
             ]);
 
-            if($schedule == 'day'){
-                $event = $event->whereHas('event_schedules_recurring.scheduleDays');
-            } else if($schedule == 'weekly'){
-                $event = $event->whereHas('event_schedules_recurring.scheduleWeekly');
-            } else if($schedule == 'monthly'){
-                $event = $event->whereHas('event_schedules_recurring.scheduleMonthly');
-            } else if($schedule == 'yearly'){
-                $event = $event->whereHas('event_schedules_recurring.scheduleYearly');
-            } else if($schedule == 'special'){
-                $event = $event->whereHas('event_schedules_special');
-            } else if($schedule == 'recurring'){
-                $event = $event->whereHas('event_schedules_recurring');
-            } else if($schedule == 'open'){
-                $event = $event->where('status', 'open');
-            } else if($schedule == 'close'){
-                $event = $event->where('status', 'close');
-            } else {
+            $event = match ($schedule) {
+                'day' => Event::whereHas('event_schedules_recurring.scheduleDays'),
+                'weekly' => Event::whereHas('event_schedules_recurring.scheduleWeekly'),
+                'monthly' => Event::whereHas('event_schedules_recurring.scheduleMonthly'),
+                'yearly' => Event::whereHas('event_schedules_recurring.scheduleYearly'),
+                'special' => Event::whereHas('event_schedules_special'),
+                'recurring' => Event::whereHas('event_schedules_recurring'),
+                'open' => Event::where('status', 'open'),
+                'close' => Event::where('status', 'close'),
+                default => null,
+            };
+            
+            if (!$event) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Invalid schedule type'
                 ], 400);
-            }
+            }            
 
             $events = $event->get();
 
@@ -191,6 +194,7 @@ class EventController extends Controller
             $validator = Validator::make($request->all(), [
                 'title'       => 'required|string',
                 'description' => 'required|string',
+                'images'      => 'nullable|array',
                 'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'status'      => 'required|in:open,close',
                 'type'        => 'required|in:recurring,special',
