@@ -213,6 +213,17 @@ class TicketController extends Controller
         }
     }
 
+    public function showLatestOrder(){
+        try{
+            $user = Auth::user();
+            $ticketOrder = TicketOrder::where('user_id', $user->id)->latest()->first();
+            $ticketOrder = TicketOrder::with('ticketOrderDetails', 'payment')->find($ticketOrder->id);
+            return response()->json($ticketOrder, 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'Order not found', 'error' => $e->getMessage()], 404);
+        }
+    }
+
     public function index()
     {
         try {
