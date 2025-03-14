@@ -163,7 +163,7 @@ class TicketController extends Controller
             if($request->payment_method !== 'cash'){
                 $payload = [
                     'transaction_details' => [
-                        'order_id' => $payment->id,
+                        'order_id' => $ticketOrder->id,
                         'gross_amount' => $totalPrice,
                     ],
                     'customer_details' => [
