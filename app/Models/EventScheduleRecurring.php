@@ -9,6 +9,7 @@ class EventScheduleRecurring extends Model
     protected $table = 'event_schedules_recurrings';
     protected $fillable = [
         'event_id',
+        'date',
         'recurring_type',
     ];
 

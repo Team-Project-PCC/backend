@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\PromotionUsages;
 use App\Models\Event;
 use Carbon\Carbon;
-
+use App\Models\EventScheduleRecurring;
 class TicketController extends Controller
 {
     protected $request;
@@ -49,45 +49,87 @@ class TicketController extends Controller
                     'required',
                     'date',
                     function ($attribute, $value, $fail) use ($request) {
+                        Log::info("Validating event date: $value for event_id: {$request->event_id}");
+            
                         $event = Event::find($request->event_id);
                         if (!$event) {
+                            Log::error("Event not found with ID: {$request->event_id}");
                             return $fail('Event not found.');
                         }
-
-                        if ($event->type === 'special' && $event->date->format('Y-m-d') !== $value) {
-                            return $fail('Invalid date for this special event.');
+            
+                        Log::info("Event type: {$event->type}");
+            
+                        $eventDate = Carbon::parse($value);
+            
+                        if ($event->type === 'special') {
+                            Log::info("Checking special event schedule...");
+            
+                            if (!$event->specialSchedule) {
+                                Log::error("Special event has no schedule.");
+                                return $fail('Invalid date for this special event.');
+                            }
+            
+                            $specialEventDate = $event->specialSchedule->start_datetime->format('Y-m-d');
+                            Log::info("Special event date: $specialEventDate, input date: {$eventDate->format('Y-m-d')}");
+            
+                            if ($specialEventDate !== $eventDate->format('Y-m-d')) {
+                                Log::error("Date mismatch for special event.");
+                                return $fail('Invalid date for this special event.');
+                            }
                         }
-
+            
                         if ($event->type === 'recurring') {
+                            Log::info("Checking recurring event schedule...");
+            
+                            $eventSchedule = EventScheduleRecurring::where('event_id', $event->id)->first();
+                            if (!$eventSchedule) {
+                                Log::error("No recurring schedule found for event_id: {$event->id}");
+                                return $fail('No recurring schedule found for this event.');
+                            }
+            
+                            Log::info("Recurring type: {$eventSchedule->recurring_type}");
                             $isValidRecurring = false;
-
-                            if ($event->recurringSchedules()->where('recurring_type', 'daily')->exists()) {
+            
+                            if ($eventSchedule->recurring_type === 'daily') {
+                                Log::info("Recurring event is daily, date is always valid.");
                                 $isValidRecurring = true;
+                            } else if ($eventSchedule->recurring_type === 'weekly') {
+                                $dayOfWeek = $eventDate->format('N'); 
+                                if($dayOfWeek == 1){
+                                    $dayOfWeek = 'monday';
+                                } else if($dayOfWeek == 2){
+                                    $dayOfWeek = 'tuesday';
+                                } else if($dayOfWeek == 3){
+                                    $dayOfWeek = 'wednesday';
+                                } else if($dayOfWeek == 4){
+                                    $dayOfWeek = 'thursday';
+                                } else if($dayOfWeek == 5){
+                                    $dayOfWeek = 'friday';
+                                } else if($dayOfWeek == 6){
+                                    $dayOfWeek = 'saturday';
+                                } else if($dayOfWeek == 7){
+                                    $dayOfWeek = 'sunday';
+                                }
+                                Log::info("Checking weekly schedule for day: $dayOfWeek");
+                                $isValidRecurring = $eventSchedule->scheduleWeekly->where('day', $dayOfWeek)->count() > 0;
+                            } else if ($eventSchedule->recurring_type === 'monthly') {
+                                $dayOfMonth = $eventDate->day;
+                                Log::info("Checking monthly schedule for day: $dayOfMonth");
+                                $isValidRecurring = $eventSchedule->monthlySchedules->where('day', $dayOfMonth)->count() > 0;
+                            } else if ($eventSchedule->recurring_type === 'yearly') {
+                                $dayOfMonth = $eventDate->day;
+                                $month = $eventDate->month;
+                                Log::info("Checking yearly schedule for day: $dayOfMonth, month: $month");
+                                $isValidRecurring = $eventSchedule->yearlySchedules->where('day', $dayOfMonth)->where('month', $month)->count() > 0;
                             }
-
-                            if ($event->recurringSchedules()->where('recurring_type', 'weekly')->exists()) {
-                                $weekday = Carbon::parse($value)->format('l');
-                                $isValidRecurring = $event->weeklySchedules()->where('day_of_week', $weekday)->exists();
-                            }
-
-                            if ($event->recurringSchedules()->where('recurring_type', 'monthly')->exists()) {
-                                $day = Carbon::parse($value)->day;
-                                $isValidRecurring = $event->monthlySchedules()->where('day', $day)->exists();
-                            }
-
-                            if ($event->recurringSchedules()->where('recurring_type', 'yearly')->exists()) {
-                                $month = Carbon::parse($value)->month;
-                                $day = Carbon::parse($value)->day;
-                                $isValidRecurring = $event->yearlySchedules()->where('month', $month)->where('day', $day)->exists();
-                            }
-
+            
                             if (!$isValidRecurring) {
+                                Log::error("Invalid date for this recurring event.");
                                 return $fail('Invalid date for this recurring event.');
                             }
                         }
                     },
                 ],
-
             ]);
 
             $totalQuantity = 0;
@@ -113,60 +155,81 @@ class TicketController extends Controller
             // Cek promo
             $promotion = null;
             $discount = 0;
+
             if ($request->filled('promotion_code')) {
-                Log::info('Promotion code: ' . $request->promotion_code);
+                Log::info('Promotion code input: ' . $request->promotion_code);
+                
                 $promotion = Promotion::where('code', $request->promotion_code)
                     ->where('is_active', true)
                     ->where('valid_from', '<=', now())
                     ->where('valid_until', '>=', now())
                     ->first();
 
+                if (!$promotion) {
+                    Log::warning('Promotion not found or not active');
+                    return response()->json(['message' => 'Promotion code is invalid or expired'], 400);
+                }
+
+                Log::info('Promotion found: ', $promotion->toArray());
+
                 $user = Auth::user();
 
-                if ($promotion) {
-                    if ($promotion->usage_limit > 0) {
-                        $usedCount = TicketOrder::where('user_id', $user->id)
-                            ->where('promotion_id', $promotion->id)
-                            ->count();
-                        if ($usedCount >= $promotion->usage_limit) {
-                            return response()->json(['message' => 'Promotion code has exceeded usage limit'], 400);
-                        }
-                    }
+                if ($promotion->usage_limit > 0) {
+                    $usedCount = TicketOrder::where('user_id', $user->id)
+                        ->where('promotion_id', $promotion->id)
+                        ->count();
+                    Log::info("User {$user->id} has used this promo {$usedCount} times");
 
-                    $promotionRules = PromotionRules::where('promotion_id', $promotion->id)->get();
-                    $isValidPromo = true;
-                    $maxDiscount = null;
-
-                    foreach ($promotionRules as $rule) {
-                        if ($rule->rule_type === 'min_order' && $totalPrice < $rule->rule_value) {
-                            $isValidPromo = false;
-                            break;
-                        }
-                        if ($rule->rule_type === 'max_discount') {
-                            $maxDiscount = $rule->rule_value;
-                        }
-                    }
-
-                    if ($isValidPromo) {
-                        if ($promotion->type === 'fixed_discount') {
-                            $discount = $promotion->value;
-                        } elseif ($promotion->type === 'percentage') {
-                            $discount = ($promotion->value / 100) * $totalPrice;
-                        }
-
-                        // Batasi diskon dengan max_discount jika ada
-                        if ($maxDiscount !== null) {
-                            $discount = min($discount, $maxDiscount);
-                        }
-
-                        // Pastikan totalPrice tidak negatif
-                        $totalPrice = max(0, round($totalPrice - $discount, 2));
-                    } else {
-                        $promotion = null; // Hapus promo jika aturan tidak terpenuhi
-                        $discount = 0;
+                    if ($usedCount >= $promotion->usage_limit) {
+                        Log::warning('Promotion usage limit exceeded');
+                        return response()->json(['message' => 'Promotion code has exceeded usage limit'], 400);
                     }
                 }
+
+                $promotionRules = PromotionRules::where('promotion_id', $promotion->id)->get();
+                Log::info('Promotion rules: ', $promotionRules->toArray());
+
+                $isValidPromo = true;
+                $maxDiscount = null;
+
+                foreach ($promotionRules as $rule) {
+                    Log::info("Checking rule: {$rule->rule_type} with value {$rule->rule_value}");
+                    
+                    if ($rule->rule_type === 'min_order' && $totalPrice < $rule->rule_value) {
+                        Log::warning("Order does not meet minimum amount: required {$rule->rule_value}, given {$totalPrice}");
+                        $isValidPromo = false;
+                        break;
+                    }
+
+                    if ($rule->rule_type === 'max_discount') {
+                        $maxDiscount = $rule->rule_value;
+                        Log::info("Max discount rule applied: {$maxDiscount}");
+                    }
+                }
+
+                if ($isValidPromo) {
+                    if ($promotion->type === 'fixed_discount') {
+                        $discount = $promotion->value;
+                    } elseif ($promotion->type === 'percentage') {
+                        $discount = ($promotion->value / 100) * $totalPrice;
+                    }
+
+                    Log::info("Calculated discount: {$discount}");
+
+                    if ($maxDiscount !== null) {
+                        $discount = min($discount, $maxDiscount);
+                        Log::info("Discount adjusted to max discount: {$discount}");
+                    }
+
+                    $totalPrice = max(0, round($totalPrice - $discount, 2));
+                    Log::info("Final total price after discount: {$totalPrice}");
+                } else {
+                    Log::warning("Promotion conditions not met");
+                    $promotion = null;
+                    $discount = 0;
+                }
             }
+
 
             $user = Auth::user();
             // Simpan order utama
@@ -178,6 +241,8 @@ class TicketController extends Controller
                 'promotion_id' => $promotion ? $promotion->id : null,
                 'date' => $request->date,
             ]);
+
+            
 
             // Simpan detail tiket
             foreach ($ticketDetails as $detail) {
@@ -209,7 +274,7 @@ class TicketController extends Controller
             if ($request->payment_method !== 'cash') {
                 $payload = [
                     'transaction_details' => [
-                        'order_id' => $ticketOrder->id,
+                        'order_id' => $ticketOrder->id . '_' . now()->format('YmdHis'),
                         'gross_amount' => $totalPrice,
                     ],
                     'customer_details' => [

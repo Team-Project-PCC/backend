@@ -43,4 +43,14 @@ class Event extends Model
     {
         return $this->hasMany(PromotionEvent::class, 'event_id');
     }
+
+    public function recurringSchedules()
+    {
+        return $this->hasMany(EventScheduleRecurring::class);
+    }
+
+    public function specialSchedules()
+    {
+        return $this->hasMany(EventScheduleSpecial::class);
+    }
 }

@@ -16,7 +16,7 @@ class EventSeeder extends Seeder
                 'type' => 'recurring',
                 'status' => 'open',
                 'schedules' => [
-                    ['recurring_type' => 'weekly', 'days' => ['monday', 'wednesday', 'friday'], 'start_time' => '10:00', 'end_time' => '16:00']
+                    ['recurring_type' => 'weekly', 'day' => [4, 5, 7], 'start_time' => '10:00', 'end_time' => '16:00']
                 ],
                 'categories' => [
                     ['category' => 'child', 'price' => 3000, 'quota' => 20],
@@ -31,7 +31,7 @@ class EventSeeder extends Seeder
                 'type' => 'recurring',
                 'status' => 'open',
                 'schedules' => [
-                    ['recurring_type' => 'weekly', 'days' => ['tuesday', 'thursday'], 'start_time' => '14:00', 'end_time' => '18:00']
+                    ['recurring_type' => 'daily', 'start_time' => '14:00', 'end_time' => '18:00']
                 ],
                 'categories' => [
                     ['category' => 'regular', 'price' => 5000, 'quota' => 30],
@@ -44,7 +44,7 @@ class EventSeeder extends Seeder
                 'type' => 'recurring',
                 'status' => 'open',
                 'schedules' => [
-                    ['recurring_type' => 'weekly', 'days' => ['saturday', 'sunday'], 'start_time' => '18:00', 'end_time' => '22:00']
+                    ['recurring_type' => 'weekly', 'day' => [2, 4], 'start_time' => '18:00', 'end_time' => '22:00']
                 ],
                 'categories' => [
                     ['category' => 'child', 'price' => 4000, 'quota' => 25],
@@ -57,7 +57,7 @@ class EventSeeder extends Seeder
                 'type' => 'recurring',
                 'status' => 'open',
                 'schedules' => [
-                    ['recurring_type' => 'weekly', 'days' => ['friday'], 'start_time' => '17:00', 'end_time' => '20:00']
+                    ['recurring_type' => 'weekly', 'day' => [1], 'start_time' => '17:00', 'end_time' => '20:00']
                 ],
                 'categories' => [
                     ['category' => 'regular', 'price' => 5000, 'quota' => 60],
@@ -86,11 +86,20 @@ class EventSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
-                // Insert weekly schedule per day
-                foreach ($schedule['days'] as $day) {
-                    DB::table('event_schedule_weeklies')->insert([
+                if ($schedule['recurring_type'] === 'weekly') {
+                    foreach ($schedule['day'] as $day) {
+                        DB::table('event_schedule_weeklies')->insert([
+                            'event_schedule_recurring_id' => $recurringId,
+                            'day' => strtolower($day),
+                            'start_time' => $schedule['start_time'],
+                            'end_time' => $schedule['end_time'],
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                } elseif ($schedule['recurring_type'] === 'daily') {
+                    DB::table('event_schedule_days')->insert([
                         'event_schedule_recurring_id' => $recurringId,
-                        'day' => strtolower($day),
                         'start_time' => $schedule['start_time'],
                         'end_time' => $schedule['end_time'],
                         'created_at' => now(),
