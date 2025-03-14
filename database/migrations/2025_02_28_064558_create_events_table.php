@@ -17,7 +17,6 @@ return new class extends Migration
             $table->text('description');
             $table->enum('status', ['open', 'close']);
             $table->enum('type',['recurring', 'special']);
-            $table->date('date');
             $table->timestamps();
         });
     }

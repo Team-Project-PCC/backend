@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('total_quantity');
             $table->decimal('total_price', 10, 2);
             $table->foreignId('promotion_id')->nullable()->constrained('promotions')->onDelete('set null');
+            $table->date('date');
             $table->timestamps();
         });
     }

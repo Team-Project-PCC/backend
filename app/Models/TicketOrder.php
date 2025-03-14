@@ -14,6 +14,7 @@ class TicketOrder extends Model
         'total_quantity',
         'promotions_id',
         'total_price',
+        'date',
     ];
 
     public function ticket()
