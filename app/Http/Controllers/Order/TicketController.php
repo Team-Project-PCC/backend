@@ -34,7 +34,7 @@ class TicketController extends Controller
     public function store(Request $request)
     {
         DB::beginTransaction();
-        try{
+        try {
             // Validasi request
             $request->validate([
                 'event_id' => 'required|exists:events,id',
@@ -76,11 +76,10 @@ class TicketController extends Controller
                     ->where('valid_until', '>=', now())
                     ->first();
 
-                    $user = Auth::user();
+                $user = Auth::user();
 
-                Log::info('Promotion: ' . $promotion);
                 if ($promotion) {
-                    if ($promotion && $promotion->usage_limit > 0) {
+                    if ($promotion->usage_limit > 0) {
                         $usedCount = TicketOrder::where('user_id', $user->id)
                             ->where('promotion_id', $promotion->id)
                             ->count();
@@ -90,10 +89,9 @@ class TicketController extends Controller
                     }
 
                     $promotionRules = PromotionRules::where('promotion_id', $promotion->id)->get();
-
-                    // Cek aturan promo
                     $isValidPromo = true;
                     $maxDiscount = null;
+
                     foreach ($promotionRules as $rule) {
                         if ($rule->rule_type === 'min_order' && $totalPrice < $rule->rule_value) {
                             $isValidPromo = false;
@@ -111,14 +109,16 @@ class TicketController extends Controller
                             $discount = ($promotion->value / 100) * $totalPrice;
                         }
 
-                        // Batasi diskon jika ada max_discount
+                        // Batasi diskon dengan max_discount jika ada
                         if ($maxDiscount !== null) {
                             $discount = min($discount, $maxDiscount);
                         }
 
-                        $totalPrice = max(0, $totalPrice - $discount);
+                        // Pastikan totalPrice tidak negatif
+                        $totalPrice = max(0, round($totalPrice - $discount, 2));
                     } else {
-                        $promotion = null; // Batalkan promo jika aturan tidak terpenuhi
+                        $promotion = null; // Hapus promo jika aturan tidak terpenuhi
+                        $discount = 0;
                     }
                 }
             }
@@ -160,7 +160,7 @@ class TicketController extends Controller
                 'status' => 'pending',
             ]);
 
-            if($request->payment_method !== 'cash'){
+            if ($request->payment_method !== 'cash') {
                 $payload = [
                     'transaction_details' => [
                         'order_id' => $ticketOrder->id,
@@ -178,9 +178,8 @@ class TicketController extends Controller
                             'name' => 'Ticket Order',
                         ],
                     ],
-                    'promo' => 'awwww'
                 ];
-    
+
                 $snapToken = Snap::getSnapToken($payload);
                 $payment->update(['snap_token' => $snapToken]);
                 $payment->save();
@@ -192,7 +191,7 @@ class TicketController extends Controller
                     'user_id' => $user->id,
                     'order_id' => $ticketOrder->id,
                 ]);
-            
+
                 $promotion->increment('current_usage');
             }
 
@@ -207,9 +206,10 @@ class TicketController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return response()->json([
-                'status' => 'error', 
-                'message' => 'Failed to create ticket order', 
-                'error' => $e->getMessage()], 500);
+                'status' => 'error',
+                'message' => 'Failed to create ticket order',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
 
