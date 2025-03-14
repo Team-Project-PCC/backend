@@ -23,4 +23,9 @@ class TicketCategory extends Model
     {
         return $this->hasMany(TicketOrderDetails::class);
     }
+
+    public function dailyQuota()
+    {
+        return $this->hasMany(TicketCategoryDailyQuota::class);
+    }
 }

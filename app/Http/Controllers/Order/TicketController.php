@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Payment;
 use Midtrans\Config;
 use Midtrans\Snap;
-use Midtrans\Notification;
+use App\Models\TicketCategoryDailyQuota;
 use Illuminate\Support\Facades\DB;
 use App\Models\PromotionUsages;
 use App\Models\Event;
@@ -135,6 +135,54 @@ class TicketController extends Controller
             $totalQuantity = 0;
             $totalPrice = 0;
             $ticketDetails = [];
+
+            foreach ($request->tickets as $ticket) {
+                $ticketCategory = TicketCategory::findOrFail($ticket['ticket_category_id']);
+                Log::info("Checking daily quota for ticket category: {$ticket['ticket_category_id']}");
+            
+                if (!$ticketCategory) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Ticket category not found for ID: ' . $ticket['ticket_category_id']
+                    ], 404);
+                }
+
+                $dailyQuota = TicketCategoryDailyQuota::where('ticket_category_id', $ticketCategory->id)
+                    ->where('date', $request->date)
+                    ->first();
+                if(!$dailyQuota){
+                    Log::info("Daily quota not found, creating new quota for ticket category: {$ticketCategory->quota}");
+                    TicketCategoryDailyQuota::create([
+                        'ticket_category_id' => $ticketCategory->id,
+                        'date' => $request->date,
+                        'quota' => $ticketCategory->quota,
+                    ]);
+                    
+                } else {
+                    if($dailyQuota->quota < $ticket['quantity']){
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'Daily quota exceeded for ticket category: ' . $ticketCategory->category
+                        ], 400);
+                    }
+                }
+
+                Log::info("Daily quota available for ticket category:  {$ticket['quantity']}");
+                $dailyQuota = TicketCategory::where('id', $ticket['ticket_category_id'])->first();
+
+                if (!$dailyQuota) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Ticket category not found',
+                    ], 404);
+                }
+
+                $updatedQuota = $dailyQuota->quota - $ticket['quantity'];
+
+                $dailyQuota->update(['quota' => $updatedQuota]);
+                $dailyQuota->save();
+                
+            }
 
             // Hitung harga total dan detail tiket
             foreach ($request->tickets as $ticket) {

@@ -16,6 +16,7 @@ class MidtransController extends Controller
 {
     public function callback(Request $request)
     {
+        
         $serverKey = config('services.midtrans.serverKey');
         $hashed = hash("sha512", $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
 
@@ -70,63 +71,47 @@ class MidtransController extends Controller
         }
     }
 
-    public function success(Request $request)
+    public function handleStatus(Request $request)
     {
         try{
-            $payment = Payment::where('order_id', $request->order_id)->first();
+            $order_id = $request->order_id;
+            $first_part = substr($order_id, 0, strpos($order_id, "_"));
+            $payment = Payment::where('id', $first_part)->first();
 
             if (!$payment) {
-                return response()->json(['message' => 'Payment not found'], 404);
-            } else{
-                $payment->status = 'success';
-                $payment->save();
-            }
-
-            return response()->json(['message' => 'Payment success']);
+    return response()->json(['message' => 'Payment not found'], 404);
+    } else {
+        if ($request->transaction_status == 'settlement') {
+            $payment->status = 'success';
+        } else if ($request->transaction_status == 'pending') {
+            $payment->status = 'pending';
+        } else if ($request->transaction_status == 'expire') {
+            $payment->status = 'expired';
+        } else if ($request->transaction_status == 'cancel') {
+            $payment->status = 'cancelled';
+        } else if ($request->transaction_status == 'deny') {
+            $payment->status = 'denied';
+        } else if ($request->transaction_status == 'failed') {
+            $payment->status = 'failed';
+        } else {
+            return response()->json(['message' => 'Invalid status'], 400);
+        }
+    
+        $payment->save();
+        Log::info('Midtrans Handle Status - Payment updated', [
+            'order_id' => $payment->order_id,
+            'status' => $payment->status
+        ]);
+    
+        return response()->json(['message' => 'Payment status updated to ' . $payment->status]);
+    }
         } catch (Exception $e) {
-            Log::error('Midtrans Success Error: ' . $e->getMessage());
+            Log::error('Midtrans Handle Status Error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Error updating payment status',
                 'error' => $e->getMessage()
             ], 500);
-        }
-    }
 
-    public function failed(Request $request)
-    {
-        try{
-            $payment = Payment::where('order_id', $request->order_id)->first();
-
-            if (!$payment) {
-                return response()->json(['message' => 'Payment not found'], 404);
-            } else{
-                $payment->status = 'failed';
-                $payment->save();
-            }
-
-            return response()->json(['message' => 'Payment failed']);
-        } catch (Exception $e) {
-            Log::error('Midtrans Failed Error: ' . $e->getMessage());
-            return response()->json(['message' => 'Error updating payment status'], 500);
-        }
-    }
-
-    public function cancel(Request $request)
-    {
-        try{
-            $payment = Payment::where('order_id', $request->order_id)->first();
-
-            if (!$payment) {
-                return response()->json(['message' => 'Payment not found'], 404);
-            } else{
-                $payment->status = 'cancelled';
-                $payment->save();
-            }
-
-            return response()->json(['message' => 'Payment cancelled']);
-        } catch (Exception $e) {
-            Log::error('Midtrans Cancel Error: ' . $e->getMessage());
-            return response()->json(['message' => 'Error updating payment status'], 500);
         }
     }
 }

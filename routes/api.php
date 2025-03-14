@@ -37,12 +37,15 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/user', fn (Request $reque
 
 // Profile Management
 Route::post('/update_profile', [AccountController::class, 'update_profile']);
+Route::get('/profile', [AccountController::class, 'profile']);
+
 
 // Event Routes
 Route::apiResource('events', EventController::class)->middleware('role:admin')->except(['index', 'show']);
 Route::get('events', [EventController::class, 'index']);
 Route::get('events/{id}', [EventController::class, 'show']);
 Route::get('events/serch/{schedule}', [EventController::class, 'show_schedule']);
+Route::post('/events/{id}', [EventController::class, 'updateEvent']);
 
 // Promotion Routes
 Route::apiResource('promo', PromotionController::class)->middleware('role:admin')->except(['index', 'show']);
@@ -50,19 +53,10 @@ Route::get('promo', [PromotionController::class, 'index']);
 Route::get('promo/{id}', [PromotionController::class, 'show']);
 
 Route::apiResource('ticket', TicketController::class)->middleware('role:user')->except(['index', 'show']);
+Route::get('lastTicket', [TicketController::class, 'showLatestOrder']);
 
 Route::post('/midtrans/callback', [MidtransController::class, 'callback']);
-Route::post('/midtrans/success', [MidtransController::class, 'success']);
-Route::post('/midtrans/failed', [MidtransController::class, 'failed']);
-Route::post('/midtrans/cancel', [MidtransController::class, 'cancel']);
-
-// Route::get('login/google/redirect', [GoogleController::class, 'redirectToGoogle'])
-//     ->middleware(['guest'])
-//     ->name('redirect');
-
-// Route::get('login/google/callback', [GoogleController::class, 'handleGoogleCallback'])
-//     ->middleware(['guest'])
-//     ->name('callback');
+Route::post('/midtrans/update', [MidtransController::class, 'handleTransactionStatus']);
 
 Route::post('login/google', [GoogleController::class, 'loginWithGoogle']);
 Route::post('register/google', [GoogleController::class, 'signUpWithGoogle']);
@@ -74,3 +68,5 @@ Route::any('{any}', function () {
         'errors' => ['detail' => 'The requested route does not exist.'],
     ], 404);
 })->where('any', '.*');
+
+Route::post('/midtrans/update', [MidtransController::class, 'handleStatus']);

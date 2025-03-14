@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('day')->check('day > 0 and day < 32');
             $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
+            
             $table->timestamps();
         });
     }

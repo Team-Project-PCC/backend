@@ -14,17 +14,22 @@ class AccountController extends Controller
     public function profile()
     {
         $user = User::find(Auth::id());
+        $history = $user->ticketOrders()->with(
+            'ticketOrderDetails.ticketCategory',
+            'payment'
+        )->get();
 
         if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'User not found'
+                'message' => 'User not found',
             ], 404);
         }
 
         return response()->json([
             'status' => 'success',
-            'data' => $user
+            'data' => $user,
+            'history' => $history
         ], 200);
     }
     
