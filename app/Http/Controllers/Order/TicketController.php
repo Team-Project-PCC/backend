@@ -18,6 +18,8 @@ use Midtrans\Snap;
 use Midtrans\Notification;
 use Illuminate\Support\Facades\DB;
 use App\Models\PromotionUsages;
+use App\Models\Event;
+use Carbon\Carbon;
 
 class TicketController extends Controller
 {
@@ -43,6 +45,49 @@ class TicketController extends Controller
                 'tickets.*.quantity' => 'required|integer|min:1',
                 'promotion_code' => 'nullable|string|exists:promotions,code',
                 'payment_method' => 'required|in:cashless,cash',
+                'date' => [
+                    'required',
+                    'date',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $event = Event::find($request->event_id);
+                        if (!$event) {
+                            return $fail('Event not found.');
+                        }
+
+                        if ($event->type === 'special' && $event->date->format('Y-m-d') !== $value) {
+                            return $fail('Invalid date for this special event.');
+                        }
+
+                        if ($event->type === 'recurring') {
+                            $isValidRecurring = false;
+
+                            if ($event->recurringSchedules()->where('recurring_type', 'daily')->exists()) {
+                                $isValidRecurring = true;
+                            }
+
+                            if ($event->recurringSchedules()->where('recurring_type', 'weekly')->exists()) {
+                                $weekday = Carbon::parse($value)->format('l');
+                                $isValidRecurring = $event->weeklySchedules()->where('day_of_week', $weekday)->exists();
+                            }
+
+                            if ($event->recurringSchedules()->where('recurring_type', 'monthly')->exists()) {
+                                $day = Carbon::parse($value)->day;
+                                $isValidRecurring = $event->monthlySchedules()->where('day', $day)->exists();
+                            }
+
+                            if ($event->recurringSchedules()->where('recurring_type', 'yearly')->exists()) {
+                                $month = Carbon::parse($value)->month;
+                                $day = Carbon::parse($value)->day;
+                                $isValidRecurring = $event->yearlySchedules()->where('month', $month)->where('day', $day)->exists();
+                            }
+
+                            if (!$isValidRecurring) {
+                                return $fail('Invalid date for this recurring event.');
+                            }
+                        }
+                    },
+                ],
+
             ]);
 
             $totalQuantity = 0;
@@ -131,6 +176,7 @@ class TicketController extends Controller
                 'total_quantity' => $totalQuantity,
                 'total_price' => $totalPrice,
                 'promotion_id' => $promotion ? $promotion->id : null,
+                'date' => $request->date,
             ]);
 
             // Simpan detail tiket
