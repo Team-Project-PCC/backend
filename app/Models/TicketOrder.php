@@ -36,4 +36,9 @@ class TicketOrder extends Model
     {
         return $this->hasOne(Payment::class);
     }
+
+    public function event()
+    {
+        return $this->belongsTo(Event::class);
+    }
 }

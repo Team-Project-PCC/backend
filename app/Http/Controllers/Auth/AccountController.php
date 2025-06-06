@@ -26,6 +26,7 @@ class AccountController extends Controller
             ], 404);
         }
 
+
         return response()->json([
             'status' => 'success',
             'data' => $user,
